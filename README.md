@@ -11,7 +11,9 @@ narrated video about the area, built from live web data and tuned to your intere
 | Path | What |
 |---|---|
 | `apps/extension` | MV3 extension (WXT + React): content script, badge, player page, popup |
-| `apps/server` | Local Fastify server: gathers facts, writes and voices the script, serves the manifest |
+| `apps/server` | Fastify server: gathers facts, writes and voices the script, serves the manifest, the landing page and the download |
+| `apps/site` | The landing page (`public/`: plain HTML, CSS and JavaScript, no build step) with the install guide |
+| `scripts/bundle.mjs` | Builds the release extension for the hosted server and zips it for the landing page |
 | `packages/video` | Remotion composition played by the extension |
 | `packages/shared` | Schemas and types shared by all of the above |
 
@@ -62,12 +64,63 @@ pnpm test             # all packages
 pnpm typecheck
 pnpm test:coverage    # shared 83 %, video 74 %, server 96 %, extension 84 % of statements
 pnpm check:live       # the real thing: see below
+pnpm check:site       # the landing page in a real browser, desktop and phone
 ```
 
 `pnpm check:live [airbnb|booking|<listing url>]` loads the built extension in Chromium, opens a real listing,
 waits for the badge, plays the video and closes it again. It needs the server running and the extension built,
 and it spends real credits. Screenshots land in `e2e/out/`. Set `HEADED=1` to watch, and `CHROMIUM=<binary>` to
 use a Chromium other than the one Playwright downloads (`pnpm exec playwright install chromium`).
+
+## The landing page and the release
+
+`apps/site/public` is the page people install from: what Outside does, an example video, and the six steps
+to load an extension in Chrome with Developer mode. The server serves it at `/` whenever that folder has
+an `index.html` (set `SITE_DIR` to serve another folder), next to the API.
+
+```bash
+pnpm bundle           # release build + apps/site/public/download/outside-extension.zip
+pnpm check:site       # needs the server running; screenshots land in e2e/out/
+```
+
+`pnpm bundle` builds the extension with `https://outside.pgf.lv` as its server (override with
+`OUTSIDE_SERVER_URL=https://…`), checks that the address really reached the build, and zips it with one
+top-level folder, `outside-extension`, which is what people point "Load unpacked" at. It also writes
+`release.json` (version, size, checksum), from which the page shows the version and file size. The release
+goes to `apps/extension/dist-release`; the development build in `apps/extension/dist` is left alone and
+keeps talking to `http://localhost:8787`. Neither the zip nor `release.json` is committed: run `pnpm bundle`
+wherever the page is served from.
+
+The example video on the page is a real one: the manifest and the voice track of a video the server built
+on 14 November 2026 for a stay in Innsbruck, 10–13 January. Only the photos differ. The ones the extension
+finds live belong to whoever published them, so the page shows freely licensed photos from Wikimedia
+Commons instead, credited in its footer. `apps/site/test` checks that the page asks for no file it does not
+have, loads nothing from another site, and carries no inline style or script: the server sends a
+Content-Security-Policy that would silently drop those.
+
+### Hosting it
+
+The same server runs on a host with a reverse proxy (Caddy, nginx) in front for HTTPS:
+
+```bash
+pnpm install && pnpm bundle
+HOST=127.0.0.1 PORT=8787 TRUST_PROXY=1 pnpm start      # with the three keys in .env
+```
+
+- `TRUST_PROXY` is the number of reverse proxies in front: `1` for a single Caddy or nginx. The visitor's
+  address is then the one that proxy saw (the last entry of `X-Forwarded-For`), so every visitor has an
+  allowance of their own and cannot get a fresh one by writing an address into the header. At `0`, the
+  default, the header is ignored. Never set it higher than the number of proxies you run.
+- `HOST` stays `127.0.0.1` when the proxy runs on the same machine; use `0.0.0.0` only inside a container,
+  and do not publish that port past the proxy.
+- The server holds paid keys, and anyone who installs the extension can ask it for videos. So new videos
+  are limited: `VIDEO_BUILDS_PER_VISITOR_PER_HOUR` (default 120), `VIDEO_BUILDS_AT_ONCE` (4) and
+  `VIDEO_BUILDS_PER_DAY` (1500, everyone together). A video that is already made is never counted. Over
+  the at-once limit the badge waits and asks again; over the hour or the day it says the video could not
+  be built, with Retry. People behind one shared address (an office, a venue) share one hourly allowance.
+- Have the proxy add `Strict-Transport-Security`. The server itself sends `X-Content-Type-Options` on
+  everything and a Content-Security-Policy with the page.
+- Copy the site folder as real files; the server follows symbolic links inside it.
 
 ## What a video is made of
 

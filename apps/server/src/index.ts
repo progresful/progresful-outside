@@ -13,8 +13,8 @@ const app: FastifyInstance = buildApp(runtime.appDeps);
 
 runtime.startSweeper((error) => app.log.error({ err: error }, 'sweep failed'));
 
-// Local only: the extension's background worker is the sole client.
-app.listen({ port: config.port, host: '127.0.0.1' }).catch((error: unknown) => {
+// This machine only unless HOST says otherwise: on a server a reverse proxy stands in front.
+app.listen({ port: config.port, host: config.host }).catch((error: unknown) => {
   app.log.error({ err: error }, 'server failed to start');
   process.exit(1);
 });

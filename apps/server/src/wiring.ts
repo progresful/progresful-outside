@@ -1,10 +1,11 @@
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import type { AppDeps } from './app';
 import { createSqliteCacheStore } from './cache/cacheStore';
 import { createDeduper } from './cache/dedupe';
 import type { Config } from './config';
 import { createContextDevClient } from './contextdev/client';
+import { createBuildGate } from './jobs/buildGate';
 import { createJobStore } from './jobs/jobStore';
 import { createDiskMediaStore } from './media/mediaStore';
 import { createOpenAiComplete } from './pipeline/openaiComplete';
@@ -76,11 +77,15 @@ export function createRuntime(config: Config, onSourceError: (sourceId: string, 
     appDeps: {
       logger: true,
       mediaDir,
+      trustedProxies: config.trustedProxies,
+      // The landing page is optional: a server run for development alone has no need of it.
+      ...(existsSync(join(config.siteDir, 'index.html')) ? { siteDir: config.siteDir } : {}),
       videos: {
         cache,
         jobs: createJobStore(),
         run: (input, onStage) => runPipeline(pipelineDeps, input, onStage),
         now: () => Date.now(),
+        gate: createBuildGate(config.buildLimits),
       },
     },
     startSweeper(onError: (error: unknown) => void): void {

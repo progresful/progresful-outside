@@ -48,7 +48,10 @@ for (const [network, prefix] of [
 ] as const) {
   NOT_PUBLIC.addSubnet(network, prefix, 'ipv4');
 }
-for (const [network, prefix] of [['::', 127], ['fc00::', 7], ['fe80::', 10], ['ff00::', 8], ['64:ff9b::', 96]] as const) {
+// `::/96`, `2002::/16` and `2001::/32` carry an IPv4 address inside an IPv6 one, which could be a private machine.
+for (const [network, prefix] of [
+  ['::', 96], ['fc00::', 7], ['fe80::', 10], ['ff00::', 8], ['64:ff9b::', 96], ['2002::', 16], ['2001::', 32],
+] as const) {
   NOT_PUBLIC.addSubnet(network, prefix, 'ipv6');
 }
 const MAPPED_IPV4 = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i;

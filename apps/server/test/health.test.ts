@@ -8,6 +8,13 @@ describe('app', () => {
     expect(res.json()).toEqual({ success: true, data: { status: 'ok' }, error: null });
   });
 
+  it('tells browsers never to guess the type of anything it sends', async () => {
+    const app = buildApp({});
+
+    expect((await app.inject({ method: 'GET', url: '/api/health' })).headers['x-content-type-options']).toBe('nosniff');
+    expect((await app.inject({ method: 'GET', url: '/api/nope' })).headers['x-content-type-options']).toBe('nosniff');
+  });
+
   it('allows an extension origin', async () => {
     const origin = 'chrome-extension://abcdefghijklmnop';
     const res = await buildApp({}).inject({ method: 'GET', url: '/api/health', headers: { origin } });

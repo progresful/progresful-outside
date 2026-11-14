@@ -9,11 +9,15 @@
     "dev:extension": "pnpm --filter @outside/extension dev",
     "build:extension": "pnpm --filter @outside/extension build",
     "test:coverage": "pnpm -r exec vitest run --coverage --coverage.include='src/**'",
-    "check:live": "node e2e/live.mjs"
+    "check:live": "node e2e/live.mjs",
+    "bundle": "node scripts/bundle.mjs",
+    "check:site": "node e2e/site.mjs",
+    "start": "pnpm --filter @outside/server start"
   },
   "devDependencies": {
     "@playwright/test": "1.65.1",
     "@vitest/coverage-v8": "^5.1.0",
+    "fflate": "^0.8.3",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }

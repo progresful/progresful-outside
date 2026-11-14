@@ -47,9 +47,35 @@ describe('loadConfig', () => {
       elevenLabsModelId: 'eleven_flash_v2_5',
       contextDevRequestsPerMinute: 10,
       port: 8787,
+      host: '127.0.0.1',
+      trustedProxies: 0,
+      buildLimits: { perVisitorPerHour: 120, concurrent: 4, perDay: 1500 },
       dataDir: './data',
+      siteDir: '../site/public',
       fixtureMode: 'off',
     });
+  });
+
+  it('can be told to listen for a reverse proxy and to serve the landing page from elsewhere', () => {
+    const config = loadConfig({ ...fullEnv, HOST: '0.0.0.0', TRUST_PROXY: '1', SITE_DIR: '/srv/outside/site' });
+
+    expect([config.host, config.trustedProxies, config.siteDir]).toEqual(['0.0.0.0', 1, '/srv/outside/site']);
+  });
+
+  it('wants to know how many proxies stand in front, never just "trust them all"', () => {
+    expect(loadConfig({ ...fullEnv, TRUST_PROXY: '0' }).trustedProxies).toBe(0);
+    expect(loadConfig({ ...fullEnv, TRUST_PROXY: '2' }).trustedProxies).toBe(2);
+    for (const wrong of ['true', 'yes please', '-1', '1.5']) {
+      expect(() => loadConfig({ ...fullEnv, TRUST_PROXY: wrong })).toThrow(/TRUST_PROXY/);
+    }
+  });
+
+  it('reads and checks how many videos may be built', () => {
+    const config = loadConfig({ ...fullEnv, VIDEO_BUILDS_PER_VISITOR_PER_HOUR: '20', VIDEO_BUILDS_AT_ONCE: '2', VIDEO_BUILDS_PER_DAY: '300' });
+
+    expect(config.buildLimits).toEqual({ perVisitorPerHour: 20, concurrent: 2, perDay: 300 });
+    expect(() => loadConfig({ ...fullEnv, VIDEO_BUILDS_AT_ONCE: '0' })).toThrow(/VIDEO_BUILDS_AT_ONCE/);
+    expect(() => loadConfig({ ...fullEnv, VIDEO_BUILDS_PER_DAY: 'plenty' })).toThrow(/VIDEO_BUILDS_PER_DAY/);
   });
 
   it('reads overrides', () => {

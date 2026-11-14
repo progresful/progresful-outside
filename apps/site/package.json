@@ -1,0 +1,10 @@
+{
+  "name": "@outside/site",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The landing page: static files in public/, served by the server next to the extension download.",
+  "scripts": {
+    "test": "vitest run"
+  }
+}

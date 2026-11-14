@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { adapterFor } from '../src/sites';
+import { serverMatches } from '../src/sites/hosts';
 
 /**
  * Two kinds of page: small synthetic ones that carry the standard metadata (JSON-LD, OpenGraph)
@@ -318,5 +319,21 @@ describe('every adapter', () => {
        <script type="application/ld+json">${JSON.stringify({ '@type': 'VacationRental', image: ['javascript:alert(1)', 'https://a0.muscache.com/ok.jpg'] })}</script>`,
     );
     expect(adapterFor(airbnbUrl)!.adapter.extractListing(mixed, airbnbUrl)?.photos).toEqual(['https://a0.muscache.com/ok.jpg?im_w=1440']);
+  });
+});
+
+describe('serverMatches', () => {
+  it('lets the worker reach a server on this machine', () => {
+    expect(serverMatches(undefined)).toEqual(['http://localhost/*', 'http://127.0.0.1/*']);
+  });
+
+  it('lets a release build reach the server it was made for, and no other', () => {
+    expect(serverMatches('https://outside.pgf.lv')).toEqual(['https://outside.pgf.lv/*']);
+    expect(serverMatches('https://outside.pgf.lv:8443/some/path')).toEqual(['https://outside.pgf.lv/*']);
+  });
+
+  it('stays with this machine for a local address or one it cannot read', () => {
+    expect(serverMatches('http://localhost:9000')).toEqual(['http://localhost/*', 'http://127.0.0.1/*']);
+    expect(serverMatches('not a url')).toEqual(['http://localhost/*', 'http://127.0.0.1/*']);
   });
 });

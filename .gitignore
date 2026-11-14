@@ -4,6 +4,8 @@ data/
 .output
 .wxt
 dist
+dist-release
+apps/site/public/download/
 coverage
 .superpowers/
 .DS_Store

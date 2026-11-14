@@ -6,10 +6,34 @@ export interface Settings {
   serverUrl: string;
 }
 
+/** The server a development build talks to: the one `pnpm dev:server` runs on this machine. */
+export const LOCAL_SERVER_URL = 'http://localhost:8787';
+
+function webAddress(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') {
+    return undefined;
+  }
+  try {
+    const url = new URL(raw);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? raw.replace(/\/+$/, '') : undefined;
+  } catch {
+    // Not a URL at all.
+    return undefined;
+  }
+}
+
+/**
+ * Where the server is until the user says otherwise: the address a release build was made for
+ * (`WXT_SERVER_URL` at build time), else this machine.
+ */
+export function defaultServerUrl(builtFor: string | undefined): string {
+  return webAddress(builtFor) ?? LOCAL_SERVER_URL;
+}
+
 export const DEFAULT_SETTINGS: Settings = {
   interests: [],
   sites: { airbnb: true, booking: true },
-  serverUrl: 'http://localhost:8787',
+  serverUrl: defaultServerUrl(import.meta.env.WXT_SERVER_URL),
 };
 
 /** The part of `browser.storage.sync` the settings need. Injected so the store is testable. */
@@ -42,19 +66,9 @@ function cleanSites(raw: unknown): Settings['sites'] {
   return { airbnb: flag('airbnb'), booking: flag('booking') };
 }
 
-/** Only http(s) origins are accepted; anything else falls back to the default local server. */
+/** Only http(s) addresses are accepted; anything else falls back to the default server rather than break every request. */
 function cleanServerUrl(raw: unknown): string {
-  if (typeof raw !== 'string') {
-    return DEFAULT_SETTINGS.serverUrl;
-  }
-  try {
-    const url = new URL(raw);
-    const usable = url.protocol === 'http:' || url.protocol === 'https:';
-    return usable ? raw.replace(/\/+$/, '') : DEFAULT_SETTINGS.serverUrl;
-  } catch {
-    // Not a URL at all: use the default rather than break every request.
-    return DEFAULT_SETTINGS.serverUrl;
-  }
+  return webAddress(raw) ?? DEFAULT_SETTINGS.serverUrl;
 }
 
 /** Stored values are treated as untrusted: anything unexpected is repaired, never passed on. */

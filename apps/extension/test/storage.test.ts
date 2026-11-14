@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DEFAULT_SETTINGS, createSettingsStore, watchSettings, type KeyValueArea } from '../src/storage';
+import { DEFAULT_SETTINGS, LOCAL_SERVER_URL, createSettingsStore, defaultServerUrl, watchSettings, type KeyValueArea } from '../src/storage';
 
 function memoryArea(initial: Record<string, unknown> = {}): KeyValueArea & { data: Record<string, unknown> } {
   const area = {
@@ -11,6 +11,24 @@ function memoryArea(initial: Record<string, unknown> = {}): KeyValueArea & { dat
   };
   return area;
 }
+
+describe('defaultServerUrl', () => {
+  it('is this machine unless the build names a server', () => {
+    expect(LOCAL_SERVER_URL).toBe('http://localhost:8787');
+    expect(defaultServerUrl(undefined)).toBe('http://localhost:8787');
+    expect(defaultServerUrl('')).toBe('http://localhost:8787');
+  });
+
+  it('is the server the build was made for', () => {
+    expect(defaultServerUrl('https://outside.pgf.lv')).toBe('https://outside.pgf.lv');
+    expect(defaultServerUrl('https://outside.pgf.lv/')).toBe('https://outside.pgf.lv');
+  });
+
+  it('falls back to this machine when the build names something that is not a web address', () => {
+    expect(defaultServerUrl('outside.pgf.lv')).toBe('http://localhost:8787');
+    expect(defaultServerUrl('ftp://outside.pgf.lv')).toBe('http://localhost:8787');
+  });
+});
 
 describe('settings store', () => {
   it('returns defaults when storage is empty', async () => {

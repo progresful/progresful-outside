@@ -6,6 +6,7 @@ import type { FastifyInstance } from 'fastify';
 import { describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../src/app';
 import { createSqliteCacheStore } from '../src/cache/cacheStore';
+import { createBuildGate, type BuildLimits } from '../src/jobs/buildGate';
 import { createJobStore } from '../src/jobs/jobStore';
 import { NotEnoughDataError, type StageUpdate } from '../src/pipeline/run';
 import type { RunVideo } from '../src/routes/videos';
@@ -36,7 +37,7 @@ interface Harness {
 }
 
 /** An app whose pipeline is a promise the test settles by hand. */
-function harness(): Harness {
+function harness(limits?: BuildLimits): Harness {
   let resolve: (value: VideoManifest) => void = () => {};
   let reject: (error: Error) => void = () => {};
   let onStage: (update: StageUpdate) => void = () => {};
@@ -48,7 +49,13 @@ function harness(): Harness {
     });
   });
   const app = buildApp({
-    videos: { cache: createSqliteCacheStore(':memory:'), jobs: createJobStore(), run, now: () => NOW },
+    videos: {
+      cache: createSqliteCacheStore(':memory:'),
+      jobs: createJobStore(),
+      run,
+      now: () => NOW,
+      ...(limits ? { gate: createBuildGate(limits) } : {}),
+    },
   });
   return { app, run, finish: (result = manifest) => resolve(result), fail: (error) => reject(error), stage: (u) => onStage(u) };
 }
@@ -62,6 +69,67 @@ async function settle(): Promise<void> {
 }
 
 const body = { listing, interests: ['food', 'culture'] };
+
+describe('POST /api/videos on a server anyone can reach', () => {
+  const another = { listing: { ...listing, listingId: '777', url: 'https://www.airbnb.com/rooms/777' }, interests: ['food', 'culture'] };
+
+  it('asks a caller to come back shortly while it is building as many videos as it builds at once', async () => {
+    const { app, run, finish } = harness({ perVisitorPerHour: 10, concurrent: 1, perDay: 100 });
+
+    expect((await post(app, body)).statusCode).toBe(200);
+    const refused = await post(app, another);
+    expect(refused.statusCode).toBe(429);
+    expect(refused.json()).toEqual({ success: false, data: null, error: 'Too many requests' });
+    expect(run).toHaveBeenCalledTimes(1);
+
+    finish();
+    await settle();
+    expect((await post(app, another)).json().data).toMatchObject({ status: 'queued' });
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+
+  it('frees the place of a video that failed, too', async () => {
+    const { app, fail } = harness({ perVisitorPerHour: 10, concurrent: 1, perDay: 100 });
+    await post(app, body);
+
+    fail(new Error('boom'));
+    await settle();
+
+    expect((await post(app, another)).statusCode).toBe(200);
+  });
+
+  it('tells a visitor who has used their allowance for the hour, rather than build more', async () => {
+    const { app, run, finish } = harness({ perVisitorPerHour: 1, concurrent: 5, perDay: 100 });
+    await post(app, body);
+    finish();
+    await settle();
+
+    const refused = await post(app, another);
+
+    expect(refused.statusCode).toBe(429);
+    expect(refused.json()).toEqual({ success: false, data: null, error: 'Too many videos for now' });
+    expect(run).toHaveBeenCalledTimes(1);
+  });
+
+  it('still hands out a video that is already made, or being made, to someone over their allowance', async () => {
+    const { app, finish } = harness({ perVisitorPerHour: 1, concurrent: 5, perDay: 100 });
+    await post(app, body);
+
+    expect((await post(app, body)).json().data).toMatchObject({ status: 'queued', cached: false });
+    finish();
+    await settle();
+    expect((await post(app, body)).json().data).toMatchObject({ status: 'ready', cached: true });
+  });
+
+  it('builds without limit when it has been given none, as on a developer machine', async () => {
+    const { app, run } = harness();
+
+    await post(app, body);
+    await post(app, another);
+
+    expect(run).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe('POST /api/videos', () => {
   it('starts a job and returns its id', async () => {

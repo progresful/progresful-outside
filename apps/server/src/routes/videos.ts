@@ -1,5 +1,6 @@
 import {
   CreateVideoRequestSchema,
+  RATE_LIMITED_ERROR,
   effectiveInterests,
   type CreateVideoResponse,
   type ListingContext,
@@ -11,6 +12,7 @@ import type { CacheStore } from '../cache/cacheStore';
 import { videoKey } from '../cache/keys';
 import { CreditsExhaustedError } from '../contextdev/client';
 import { fail, ok } from '../envelope';
+import type { BuildGate } from '../jobs/buildGate';
 import type { Job, JobStore } from '../jobs/jobStore';
 import { NotEnoughDataError, TEMPLATE_VERSION, type PipelineInput, type StageUpdate } from '../pipeline/run';
 
@@ -21,7 +23,12 @@ export interface VideoRouteDeps {
   jobs: JobStore;
   run: RunVideo;
   now: () => number;
+  /** Limits how many new videos are built; without one, as on a developer's machine, there is no limit. */
+  gate?: BuildGate;
 }
+
+/** Said to a visitor whose allowance of new videos is used up. Unlike "Too many requests", asking again soon will not help. */
+export const BUILD_LIMIT_ERROR = 'Too many videos for now';
 
 const VIDEO_ID = /^[0-9a-f]{16}$/;
 const VIDEO_ID_LENGTH = 16;
@@ -80,7 +87,8 @@ function startJob(deps: VideoRouteDeps, log: FastifyBaseLogger, job: Job, input:
       const message = error instanceof CreditsExhaustedError ? 'Context.dev credits are exhausted' : 'video job failed';
       log.error({ err: error, videoId: job.id }, message);
       deps.jobs.put({ ...job, status: 'failed', stage: 'Failed', progress: 0, error: publicError(error) });
-    });
+    })
+    .finally(() => deps.gate?.release());
 }
 
 export function videoRoutes(deps: VideoRouteDeps): FastifyPluginAsync {
@@ -108,6 +116,11 @@ export function videoRoutes(deps: VideoRouteDeps): FastifyPluginAsync {
       const running = deps.jobs.getByKey(key);
       if (running && running.status !== 'failed') {
         return ok<CreateVideoResponse>({ videoId, status: running.status, cached: false });
+      }
+      // Only a video that has to be built is counted; one that exists or is on its way was handed out above.
+      const admission = deps.gate?.admit(request.ip, deps.now()) ?? 'ok';
+      if (admission !== 'ok') {
+        return reply.code(429).send(fail(admission === 'busy' ? RATE_LIMITED_ERROR : BUILD_LIMIT_ERROR));
       }
       const job: Job = { id: videoId, key, status: 'queued', stage: 'Reading the neighbourhood', progress: 0 };
       startJob(deps, request.log, job, { videoId, listing, interests });
