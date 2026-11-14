@@ -1,0 +1,514 @@
+{
+ "id": "e8003a2085afb9da",
+ "version": 1,
+ "fps": 30,
+ "width": 1280,
+ "height": 720,
+ "durationInFrames": 740,
+ "audioUrl": null,
+ "scenes": [
+  {
+   "type": "hook",
+   "startFrame": 0,
+   "durationInFrames": 119,
+   "imageUrl": "demo/img/hook.jpg",
+   "title": "Around Innsbruck",
+   "subtitle": "10–13 Jan · usually −8 to 4 °C, some rain",
+   "captions": [
+    {
+     "text": "Innsbruck",
+     "startSec": 0,
+     "endSec": 0.546
+    },
+    {
+     "text": "in",
+     "startSec": 0.604,
+     "endSec": 0.708
+    },
+    {
+     "text": "January",
+     "startSec": 0.766,
+     "endSec": 1.126
+    },
+    {
+     "text": "brings",
+     "startSec": 1.207,
+     "endSec": 1.462
+    },
+    {
+     "text": "minus",
+     "startSec": 1.52,
+     "endSec": 1.811
+    },
+    {
+     "text": "8",
+     "startSec": 1.88,
+     "endSec": 2.043
+    },
+    {
+     "text": "to",
+     "startSec": 2.078,
+     "endSec": 2.136
+    },
+    {
+     "text": "4",
+     "startSec": 2.217,
+     "endSec": 2.38
+    },
+    {
+     "text": "degrees",
+     "startSec": 2.414,
+     "endSec": 2.832
+    },
+    {
+     "text": "and",
+     "startSec": 2.879,
+     "endSec": 2.96
+    },
+    {
+     "text": "some",
+     "startSec": 3.018,
+     "endSec": 3.192
+    },
+    {
+     "text": "rain.",
+     "startSec": 3.239,
+     "endSec": 3.715
+    }
+   ],
+   "factIds": [
+    "climate:stay"
+   ]
+  },
+  {
+   "type": "activity",
+   "startFrame": 119,
+   "durationInFrames": 148,
+   "imageUrl": "demo/img/ski.jpg",
+   "kicker": "Ski & snowboard",
+   "title": "Stubai Glacier",
+   "subtitle": "Ski resort · 4.7 rating · 11,817 reviews · ≈ 45 min drive",
+   "note": "Popular ski mountain with various trails, a terrain park & dramatic views, plus on-mountain dining.",
+   "items": [
+    {
+     "title": "A guided Ski-Day in Innsbruck - the capital of the Alps",
+     "detail": "from €340"
+    }
+   ],
+   "captions": [
+    {
+     "text": "Try",
+     "startSec": 4.121,
+     "endSec": 4.342
+    },
+    {
+     "text": "skiing",
+     "startSec": 4.411,
+     "endSec": 4.76
+    },
+    {
+     "text": "and",
+     "startSec": 4.806,
+     "endSec": 4.876
+    },
+    {
+     "text": "snowboarding",
+     "startSec": 4.934,
+     "endSec": 5.514
+    },
+    {
+     "text": "at",
+     "startSec": 5.561,
+     "endSec": 5.631
+    },
+    {
+     "text": "Stubai",
+     "startSec": 5.689,
+     "endSec": 6.06
+    },
+    {
+     "text": "Glacier,",
+     "startSec": 6.118,
+     "endSec": 6.71
+    },
+    {
+     "text": "about",
+     "startSec": 6.873,
+     "endSec": 7.14
+    },
+    {
+     "text": "45",
+     "startSec": 7.198,
+     "endSec": 7.604
+    },
+    {
+     "text": "minutes",
+     "startSec": 7.662,
+     "endSec": 7.906
+    },
+    {
+     "text": "by",
+     "startSec": 7.953,
+     "endSec": 8.057
+    },
+    {
+     "text": "car.",
+     "startSec": 8.127,
+     "endSec": 8.638
+    }
+   ],
+   "factIds": [
+    "place:ChIJfwPcWlo2nUcRkN9QDcstW0c",
+    "exp:viator:/tours/Innsbruck/A-Guided-Via-Ferrata-Private-Tour-by-Crazy-Eddy/d5173-129168P8"
+   ]
+  },
+  {
+   "type": "activity",
+   "startFrame": 267,
+   "durationInFrames": 150,
+   "imageUrl": "demo/img/walk.jpg",
+   "kicker": "Snowshoe & winter walks",
+   "title": "Zirbenweg",
+   "subtitle": "Hiking area · 4.8 rating · 280 reviews · ≈ 20 min drive",
+   "note": "Gentle trekking route with views of the Tyrolean mountains, known for pine forest & summer roses.",
+   "items": [
+    {
+     "title": "Innsbruck-Stubai Valley: Snowshoeing in the idyllic Stubai…",
+     "detail": "from €160"
+    }
+   ],
+   "captions": [
+    {
+     "text": "Or",
+     "startSec": 9.183,
+     "endSec": 9.357
+    },
+    {
+     "text": "enjoy",
+     "startSec": 9.415,
+     "endSec": 9.694
+    },
+    {
+     "text": "snowshoeing",
+     "startSec": 9.752,
+     "endSec": 10.298
+    },
+    {
+     "text": "and",
+     "startSec": 10.367,
+     "endSec": 10.507
+    },
+    {
+     "text": "winter",
+     "startSec": 10.565,
+     "endSec": 10.82
+    },
+    {
+     "text": "walks",
+     "startSec": 10.867,
+     "endSec": 11.157
+    },
+    {
+     "text": "at",
+     "startSec": 11.192,
+     "endSec": 11.261
+    },
+    {
+     "text": "Zirbenweg,",
+     "startSec": 11.319,
+     "endSec": 12.039
+    },
+    {
+     "text": "about",
+     "startSec": 12.202,
+     "endSec": 12.457
+    },
+    {
+     "text": "20",
+     "startSec": 12.515,
+     "endSec": 12.689
+    },
+    {
+     "text": "minutes",
+     "startSec": 12.736,
+     "endSec": 12.956
+    },
+    {
+     "text": "by",
+     "startSec": 12.991,
+     "endSec": 13.096
+    },
+    {
+     "text": "car.",
+     "startSec": 13.154,
+     "endSec": 13.653
+    }
+   ],
+   "factIds": [
+    "place:ChIJwQ-RL3dmnUcROeRyRzjYMDs",
+    "exp:getyourguide:/neustift-im-stubaital-l173340/innsbruck-stubai-valley-snowshoeing-in-tyrolean-forests-t894093/"
+   ]
+  },
+  {
+   "type": "activity",
+   "startFrame": 417,
+   "durationInFrames": 112,
+   "imageUrl": "demo/img/sled.jpg",
+   "kicker": "Sledding",
+   "title": "Rumer Alm",
+   "subtitle": "Mountain cabin · 4.7 rating · 691 reviews · ≈ 12 min drive",
+   "captions": [
+    {
+     "text": "For",
+     "startSec": 14.059,
+     "endSec": 14.176
+    },
+    {
+     "text": "sledding,",
+     "startSec": 14.21,
+     "endSec": 14.675
+    },
+    {
+     "text": "head",
+     "startSec": 14.779,
+     "endSec": 14.953
+    },
+    {
+     "text": "to",
+     "startSec": 15,
+     "endSec": 15.058
+    },
+    {
+     "text": "Rumer",
+     "startSec": 15.116,
+     "endSec": 15.36
+    },
+    {
+     "text": "Alm,",
+     "startSec": 15.418,
+     "endSec": 15.708
+    },
+    {
+     "text": "about",
+     "startSec": 15.813,
+     "endSec": 16.068
+    },
+    {
+     "text": "12",
+     "startSec": 16.103,
+     "endSec": 16.347
+    },
+    {
+     "text": "minutes",
+     "startSec": 16.393,
+     "endSec": 16.625
+    },
+    {
+     "text": "by",
+     "startSec": 16.672,
+     "endSec": 16.788
+    },
+    {
+     "text": "car.",
+     "startSec": 16.857,
+     "endSec": 17.38
+    }
+   ],
+   "factIds": [
+    "place:ChIJ9bodQoNunUcRFRPsViNUymc"
+   ]
+  },
+  {
+   "type": "experiences",
+   "startFrame": 529,
+   "durationInFrames": 108,
+   "imageUrl": "demo/img/offers.jpg",
+   "title": "Experiences nearby",
+   "items": [
+    {
+     "title": "Bergisel Ski Jump Arena Entrance Ticket in Innsbruck",
+     "detail": "from €10"
+    },
+    {
+     "title": "Innsbruck: Top of Innsbruck: Roundtrip Cable Car Ticket",
+     "detail": "from €59"
+    },
+    {
+     "title": "Neustift im Stubaital: Tandem Paragliding Flight",
+     "detail": "from €125"
+    }
+   ],
+   "captions": [
+    {
+     "text": "Consider",
+     "startSec": 17.786,
+     "endSec": 18.216
+    },
+    {
+     "text": "a",
+     "startSec": 18.274,
+     "endSec": 18.297
+    },
+    {
+     "text": "Bergisel",
+     "startSec": 18.355,
+     "endSec": 18.773
+    },
+    {
+     "text": "Ski",
+     "startSec": 18.843,
+     "endSec": 19.063
+    },
+    {
+     "text": "Jump",
+     "startSec": 19.133,
+     "endSec": 19.342
+    },
+    {
+     "text": "Arena",
+     "startSec": 19.4,
+     "endSec": 19.667
+    },
+    {
+     "text": "ticket",
+     "startSec": 19.713,
+     "endSec": 20.027
+    },
+    {
+     "text": "from",
+     "startSec": 20.073,
+     "endSec": 20.236
+    },
+    {
+     "text": "€10.",
+     "startSec": 20.282,
+     "endSec": 20.967
+    }
+   ],
+   "factIds": [
+    "exp:viator:/tours/Innsbruck/Bergisel-Ski-Jump-Arena-Entrance-Ticket-in-Innsbruck/d5173-42108P1",
+    "exp:getyourguide:/innsbruck-l164/top-of-innsbruck-roundtrip-cable-car-ticket-t42327/",
+    "exp:getyourguide:/stubaital-l94269/neustift-im-stubaital-tandem-paragliding-flight-t190490/"
+   ]
+  },
+  {
+   "type": "outro",
+   "startFrame": 637,
+   "durationInFrames": 103,
+   "imageUrl": "demo/img/outro.jpg",
+   "title": "What's outside",
+   "items": [
+    {
+     "title": "Google Maps",
+     "detail": ""
+    },
+    {
+     "title": "Viator",
+     "detail": ""
+    },
+    {
+     "title": "GetYourGuide",
+     "detail": ""
+    },
+    {
+     "title": "Open-Meteo (past years)",
+     "detail": ""
+    },
+    {
+     "title": "Wikimedia Commons",
+     "detail": ""
+    }
+   ],
+   "captions": [
+    {
+     "text": "Come",
+     "startSec": 21.374,
+     "endSec": 21.583
+    },
+    {
+     "text": "stay",
+     "startSec": 21.618,
+     "endSec": 21.896
+    },
+    {
+     "text": "and",
+     "startSec": 21.954,
+     "endSec": 22.035
+    },
+    {
+     "text": "make",
+     "startSec": 22.082,
+     "endSec": 22.244
+    },
+    {
+     "text": "Innsbruck",
+     "startSec": 22.303,
+     "endSec": 22.709
+    },
+    {
+     "text": "your",
+     "startSec": 22.767,
+     "endSec": 22.883
+    },
+    {
+     "text": "winter",
+     "startSec": 22.929,
+     "endSec": 23.173
+    },
+    {
+     "text": "escape.",
+     "startSec": 23.231,
+     "endSec": 23.916
+    }
+   ],
+   "factIds": []
+  }
+ ],
+ "sources": [
+  {
+   "id": "google-maps:adventure",
+   "label": "Google Maps",
+   "url": "https://www.google.com/maps/search/toboggan%20run%20near%20Innsbruck%2C%20Austria",
+   "fetchedAt": "2026-11-14T13:16:20.772Z"
+  },
+  {
+   "id": "google-maps:nature",
+   "label": "Google Maps",
+   "url": "https://www.google.com/maps/search/cross-country%20ski%20trail%20near%20Innsbruck%2C%20Austria",
+   "fetchedAt": "2026-11-14T13:16:25.374Z"
+  },
+  {
+   "id": "viator",
+   "label": "Viator",
+   "url": "https://www.viator.com/searchResults/all?text=Innsbruck",
+   "fetchedAt": "2026-11-14T11:39:59.561Z"
+  },
+  {
+   "id": "getyourguide",
+   "label": "GetYourGuide",
+   "url": "https://www.getyourguide.com/s/?q=Innsbruck&date_from=2027-01-10&date_to=2027-01-13",
+   "fetchedAt": "2026-11-14T12:27:50.251Z"
+  },
+  {
+   "id": "open-meteo-archive",
+   "label": "Open-Meteo (past years)",
+   "url": "https://open-meteo.com",
+   "fetchedAt": "2026-11-14T12:32:53.850Z"
+  },
+  {
+   "id": "wikimedia-commons",
+   "label": "Wikimedia Commons",
+   "url": "https://commons.wikimedia.org/wiki/File:Innsbruck_Olympic_Stadium.JPG",
+   "fetchedAt": "2026-11-14T12:09:52.804Z"
+  }
+ ],
+ "oldestFetchedAt": "2026-11-14T11:39:59.561Z",
+ "listing": {
+  "title": "Flat in Innsbruck",
+  "locationText": "Innsbruck, Austria"
+ },
+ "interests": [
+  "adventure",
+  "nature"
+ ]
+}

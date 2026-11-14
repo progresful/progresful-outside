@@ -1,0 +1,13 @@
+{
+  "note": "The narrator's lines, in order. `scene` says which part of the film a line belongs to. Edit a line, run `pnpm --filter @outside/promo voiceover`, then render: only changed lines are voiced again.",
+  "lines": [
+    { "id": "open-1", "scene": "listing", "text": "You've found a place to stay. The photos look great." },
+    { "id": "open-2", "scene": "listing", "text": "But a listing only shows you the room." },
+    { "id": "badge-1", "scene": "badge", "text": "Outside shows you the rest. It reads the live web around the address: things to do, today's prices, the weather for your dates." },
+    { "id": "badge-2", "scene": "badge", "text": "About ten seconds later, it's ready." },
+    { "id": "dates", "scene": "dates", "text": "It knows when you're going. In January, it finds ski areas and toboggan runs. In July, lakes and rafting." },
+    { "id": "interests", "scene": "interests", "text": "Tell it what you like, and the video is rebuilt around you." },
+    { "id": "trust", "scene": "trust", "text": "Every rating, every price, every minute of the drive comes from a live source. And every number the voice says is checked against it." },
+    { "id": "close", "scene": "close", "text": "Outside. See what's outside, before you book." }
+  ]
+}

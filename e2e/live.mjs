@@ -7,6 +7,7 @@
  *
  * LIVE_PLACE=Innsbruck--Austria LIVE_CHECKIN=2027-01-15 LIVE_CHECKOUT=2027-01-20 choose where and when
  * the self-found Airbnb listing is.
+ * EXTENSION=release uses the release build (apps/extension/dist-release), which talks to the hosted server.
  * Set CHROMIUM=<path to a Chromium binary> to use one other than Playwright's own; HEADED=1 to watch;
  * INTERESTS=water,nightlife to also change the interests afterwards and wait for the rebuilt video.
  * Screenshots and a page dump go to e2e/out/ (git-ignored).
@@ -18,7 +19,9 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const extension = join(here, '..', 'apps', 'extension', 'dist', 'chrome-mv3');
+// EXTENSION=release checks the build the landing page hands out, which talks to the hosted server.
+const build = process.env.EXTENSION === 'release' ? 'dist-release' : 'dist';
+const extension = join(here, '..', 'apps', 'extension', build, 'chrome-mv3');
 const out = join(here, 'out');
 mkdirSync(out, { recursive: true });
 

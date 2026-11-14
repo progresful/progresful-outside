@@ -1,0 +1,49 @@
+{
+  "listing": "https://www.airbnb.com/rooms/39199892?check_in=2027-01-10&check_out=2027-01-13&adults=2",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "interests": [
+    "adventure",
+    "nature"
+  ],
+  "takenAt": "2026-11-14T15:21:36.473Z",
+  "title": "Apartments Ella - Apartment Lilie - Apartments for Rent in Innsbruck, Tirol, Austria - Airbnb",
+  "badge": {
+    "text": "What's outside",
+    "x": 416,
+    "y": 662,
+    "width": 187.78125,
+    "height": 56
+  },
+  "overlay": {
+    "x": 0,
+    "y": 0,
+    "width": 1920,
+    "height": 1080
+  },
+  "stages": [
+    {
+      "atSec": 2.02,
+      "text": "Building videoReading the neighbourhood"
+    },
+    {
+      "atSec": 4.03,
+      "text": "Building videoFinding sledding"
+    },
+    {
+      "atSec": 7.22,
+      "text": "Building videoWriting the script"
+    },
+    {
+      "atSec": 8.76,
+      "text": "Building videoRecording voiceover"
+    },
+    {
+      "atSec": 10.4,
+      "text": "What's outside"
+    }
+  ],
+  "stagesNote": "Seen on the first, uncached build through the hosted server at 2026-11-14T15:20Z. A later run finds the video already made."
+}

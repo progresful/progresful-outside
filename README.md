@@ -14,6 +14,8 @@ narrated video about the area, built from live web data and tuned to your intere
 | `apps/server` | Fastify server: gathers facts, writes and voices the script, serves the manifest, the landing page and the download |
 | `apps/site` | The landing page (`public/`: plain HTML, CSS and JavaScript, no build step) with the install guide |
 | `scripts/bundle.mjs` | Builds the release extension for the hosted server and zips it for the landing page |
+| `apps/promo` | The one-minute promotional film (Remotion), its ElevenLabs voice-over and the real screenshots it opens on |
+| `deploy/` | `setup.sh` and what it runs on the server: service unit, nginx site, install steps |
 | `packages/video` | Remotion composition played by the extension |
 | `packages/shared` | Schemas and types shared by all of the above |
 

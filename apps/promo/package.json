@@ -1,0 +1,30 @@
+{
+  "name": "@outside/promo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The promotional film: a Remotion composition, its voice-over, and the real screenshots it opens on.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Promo out/outside-promo.mp4",
+    "still": "remotion still src/index.ts Promo",
+    "voiceover": "node --env-file=../../.env scripts/voiceover.mjs",
+    "capture": "node scripts/capture.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/bricolage-grotesque": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@outside/shared": "workspace:*",
+    "@outside/video": "workspace:*",
+    "@remotion/cli": "4.0.543",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "4.0.543"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0"
+  }
+}

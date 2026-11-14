@@ -1,0 +1,13 @@
+{
+  "voiceId": "pFZP5JQG7iQjIQuC4Bku",
+  "modelId": "eleven_multilingual_v2",
+  "lines": [
+    {
+      "id": "open-1",
+      "scene": "listing",
+      "file": "vo/open-1.mp3",
+      "durationSec": 3.576,
+      "fingerprint": "3bf50ddd08c857eb"
+    }
+  ]
+}

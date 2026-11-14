@@ -5,6 +5,8 @@ data/
 .wxt
 dist
 dist-release
+apps/promo/out/
+apps/promo/public/capture/*.png
 apps/site/public/download/
 coverage
 .superpowers/
