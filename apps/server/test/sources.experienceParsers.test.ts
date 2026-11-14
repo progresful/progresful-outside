@@ -83,6 +83,104 @@ describe('parseViatorMarkdown', () => {
   });
 });
 
+describe('parseViatorMarkdown on awkward cards', () => {
+  const PHOTO = '![A photo caption](https://media.tacdn.com/a.jpg)';
+  const BLURB = `Some words about the tour.${SEP} ...More${SEP}- 1 - 2 - 3 - 4 - 5 - 6 - 7`;
+  const card = (lines: string[], url = 'https://www.viator.com/tours/X/A/d1-1P1'): string => `[${[PHOTO, BLURB, ...lines].join(SEP)}](${url})`;
+
+  it('reads a title that itself starts with a duration', () => {
+    const [tour] = parseViatorMarkdown(card(['3 Hour Lisbon Tuk Tuk Tour', '3 hoursFree Cancellation', '4.8', '(120)', 'from **€45**']));
+
+    expect(tour).toMatchObject({ title: '3 Hour Lisbon Tuk Tuk Tour', durationText: '3 hours', priceText: '€45' });
+  });
+
+  it('reads the title of a card that shows no duration', () => {
+    const [tour] = parseViatorMarkdown(card(['Lisbon City Card', '4.5', '(300)', 'from **€69**']));
+
+    expect(tour).toMatchObject({ title: 'Lisbon City Card', priceText: '€69', rating: 4.5 });
+    expect(tour).not.toHaveProperty('durationText');
+  });
+
+  it('reads a card with no rating yet', () => {
+    const [tour] = parseViatorMarkdown(card(['New Sunset Walk', '2 hoursFree Cancellation', 'from **€25**']));
+
+    expect(tour).toMatchObject({ title: 'New Sunset Walk', durationText: '2 hours', priceText: '€25' });
+    expect(tour).not.toHaveProperty('rating');
+  });
+
+  it('never takes a saving for the price', () => {
+    const [tour] = parseViatorMarkdown(card(['Fado Night', '2 hoursFree Cancellation', '4.7', '(90)', 'from **€45**', 'Save €10']));
+
+    expect(tour?.priceText).toBe('€45');
+  });
+
+  it('reads a price with a space between the thousands', () => {
+    const [tour] = parseViatorMarkdown(card(['Private Yacht Day', '8 hours', '4.9', '(60)', 'from **€1 234**']));
+
+    expect(tour?.priceText).toBe('€1234');
+  });
+
+  it('drops a card whose prices do not look like an old price and a lower new one', () => {
+    expect(parseViatorMarkdown(card(['Odd Offer', '2 hours', '4.7', '(90)', 'from', '€30', '€45']))).toEqual([]);
+    expect(parseViatorMarkdown(card(['Odd Offer', '2 hours', '4.7', '(90)', 'from', '€60', '€45', '€30']))).toEqual([]);
+  });
+
+  it('drops a card it cannot find a title for', () => {
+    expect(parseViatorMarkdown(`[4.7${SEP}(90)${SEP}from **€45**](https://www.viator.com/tours/X/A/d1-1P1)`)).toEqual([]);
+  });
+});
+
+describe('parseGetYourGuideMarkdown on awkward cards', () => {
+  const IMAGE = '![image](https://cdn.getyourguide.com/fallback/default.png)';
+  const card = (lines: string[]): string => `[${[IMAGE, ...lines].join(SEP)}](https://www.getyourguide.com/lisbon-l42/some-tour-t123/?q=Lisbon)`;
+
+  it('reads the price of a day trip whose title starts with "From"', () => {
+    const recorded = parseGetYourGuideMarkdown(fixtureMarkdown('gyg-lisbon')).find((tour) => tour.title.includes('Benagil Sea Cave'));
+
+    expect(recorded).toMatchObject({ title: 'From Lisbon: Algarve, Benagil Sea Cave & Lagos Full-Day Tour', priceText: '€89', rating: 4.9 });
+  });
+
+  it('takes the price from the price line, never from an amount in the title', () => {
+    const [tour] = parseGetYourGuideMarkdown(card(['LisbonFood Tour with €10 Voucher3 hours', '4.8', '(500)', 'From€65']));
+
+    expect(tour).toMatchObject({ title: 'Lisbon: Food Tour with €10 Voucher', priceText: '€65' });
+  });
+
+  it('drops a card with no price line', () => {
+    expect(parseGetYourGuideMarkdown(card(['From LisbonSintra Day Trip9 hours', '4.8', '(500)']))).toEqual([]);
+  });
+
+  it('separates a place label of several words from the title', () => {
+    const titles = [
+      'Neustift im StubaitalTandem Paragliding Flight1 hour',
+      'New York CityHelicopter Tour20 minutes',
+      'Vila Nova de GaiaPort Wine Cellar Visit1.5 hours',
+    ].flatMap((line) => parseGetYourGuideMarkdown(card([line, '4.8', '(500)', 'From€65'])).map((tour) => tour.title));
+
+    expect(titles).toEqual([
+      'Neustift im Stubaital: Tandem Paragliding Flight',
+      'New York City: Helicopter Tour',
+      'Vila Nova de Gaia: Port Wine Cellar Visit',
+    ]);
+  });
+
+  it('leaves a title alone that already has its place label set off', () => {
+    const [tour] = parseGetYourGuideMarkdown(card(['Innsbruck: Top of Innsbruck: Roundtrip Cable Car Ticket', '4.8', '(1,207)', 'From€59']));
+
+    expect(tour?.title).toBe('Innsbruck: Top of Innsbruck: Roundtrip Cable Car Ticket');
+  });
+});
+
+describe('a page that is far too large or malformed', () => {
+  it('is answered quickly with nothing', () => {
+    const started = Date.now();
+
+    expect(parseViatorMarkdown('['.repeat(200_000))).toEqual([]);
+    expect(parseGetYourGuideMarkdown(`[${'9'.repeat(200_000)} hours](https://www.getyourguide.com/x-l1/y-t1/)`)).toEqual([]);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+});
+
 describe('parseGetYourGuideMarkdown', () => {
   const tours = parseGetYourGuideMarkdown(fixtureMarkdown('gyg-lisbon'));
   const byTitle = (part: string) => tours.find((tour) => tour.title.includes(part));

@@ -5,6 +5,7 @@ import { assembleManifest, sceneImageUrls } from './assemble';
 import { gather } from './gather';
 import { normalizePlace } from './normalize';
 import { planScenes, scriptWithGuard, type Selection } from './script';
+import { seasonalWords } from './season';
 import { MIN_PLACES, selectEvents, selectExperiences, selectPlaces } from './select';
 import type { PipelineDeps, StageUpdate } from './types';
 import { voiceToFit } from './voiceFit';
@@ -12,7 +13,7 @@ import { voiceToFit } from './voiceFit';
 export type { PipelineDeps, PipelineSources, StageUpdate } from './types';
 
 /** Part of the video cache key: bump it when the video's look or structure changes. */
-export const TEMPLATE_VERSION = 1;
+export const TEMPLATE_VERSION = 2;
 
 export class NotEnoughDataError extends Error {
   constructor() {
@@ -33,14 +34,17 @@ async function mirrorImages(deps: PipelineDeps, urls: readonly string[]): Promis
   return new Map(urls.flatMap((url, index) => (paths[index] ? [[url, paths[index]] as const] : [])));
 }
 
-/** Only the sources whose facts made it into the video are cited. */
-function citedSources(sources: readonly Source[], sel: Selection): Source[] {
+/** Only the sources whose facts or photo made it into the video are cited. */
+function citedSources(sources: readonly Source[], sel: Selection, images: ReadonlyMap<string, string>): Source[] {
   const planned = new Set(planScenes(sel).flatMap((scene) => scene.factIds));
   const used = new Set(
-    [...sel.places, ...sel.experiences, ...sel.events, ...sel.weather]
+    [...sel.places, ...sel.experiences, ...sel.events, ...sel.weather, ...sel.climate]
       .filter((fact) => planned.has(fact.id))
       .map((fact) => fact.sourceId),
   );
+  if (sel.seasonPhoto && images.has(sel.seasonPhoto.imageUrl)) {
+    used.add(sel.seasonPhoto.sourceId);
+  }
   return sources.filter((source) => used.has(source.id));
 }
 
@@ -74,9 +78,11 @@ export async function runPipeline(
     place,
     window,
     places,
-    experiences: selectExperiences(gathered.experiences, interests),
+    experiences: selectExperiences(gathered.experiences, interests, seasonalWords(gathered.season)),
     events: selectEvents(gathered.events, window),
     weather: gathered.weather,
+    climate: gathered.climate,
+    ...(gathered.seasonPhoto ? { seasonPhoto: gathered.seasonPhoto } : {}),
   };
 
   onStage({ status: 'writing', stage: 'Writing the script', progress: 0.7 });
@@ -100,6 +106,6 @@ export async function runPipeline(
     timings: voiced.timings,
     audioUrl,
     images,
-    sources: citedSources(gathered.sources, voiced.sel),
+    sources: citedSources(gathered.sources, voiced.sel, images),
   });
 }

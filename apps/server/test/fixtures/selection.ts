@@ -1,4 +1,4 @@
-import type { EventFact, ExperienceFact, PlaceFact, WeatherFact } from '@outside/shared';
+import type { ClimateFact, EventFact, ExperienceFact, PlaceFact, WeatherFact } from '@outside/shared';
 import type { Selection } from '../../src/pipeline/script';
 
 export function placeFact(id: string, overrides: Partial<PlaceFact> = {}): PlaceFact {
@@ -81,6 +81,27 @@ export const weather: WeatherFact = {
   sourceId: 'open-meteo',
 };
 
+export const decemberClimate: ClimateFact = {
+  id: 'climate:stay',
+  kind: 'climate',
+  month: 'December',
+  tempMinC: 9,
+  tempMaxC: 15,
+  wetDaysPercent: 45,
+  snowDaysPercent: 0,
+  conditions: 'some rain',
+  sourceId: 'open-meteo-archive',
+};
+
+export const snowyClimate: ClimateFact = {
+  ...decemberClimate,
+  month: 'January',
+  tempMinC: -6,
+  tempMaxC: 3,
+  snowDaysPercent: 45,
+  conditions: 'snowy',
+};
+
 export function selection(overrides: Partial<Selection> = {}): Selection {
   return {
     place: { city: 'Lisbon', country: 'Portugal', locationText: 'Lisbon, Portugal', lat: 38.7223, lng: -9.1393 },
@@ -89,6 +110,7 @@ export function selection(overrides: Partial<Selection> = {}): Selection {
     experiences: [tour, cruise],
     events: [christmasMarket],
     weather: [weather],
+    climate: [],
     ...overrides,
   };
 }

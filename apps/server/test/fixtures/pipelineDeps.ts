@@ -68,6 +68,9 @@ export function pipelineDeps(overrides: Partial<PipelineDeps> = {}): PipelineDep
       experiences: vi.fn(async () => [{ facts: [tour, cruise], source: source('getyourguide', 'GetYourGuide') }]),
       events: vi.fn(async () => ({ facts: [christmasMarket], source: source('events', 'Eventbrite') })),
       weather: vi.fn(async () => ({ facts: [weather], source: source('open-meteo', 'Open-Meteo') })),
+      // No usual weather and no seasonal photo unless a test supplies them.
+      climate: vi.fn(async () => ({ facts: [], source: null })),
+      seasonPhoto: vi.fn(async () => ({ facts: [], source: null })),
     },
     // No model in tests: the pipeline falls back to the template script, which is valid by construction.
     complete: vi.fn().mockRejectedValue(new Error('no model in tests')),

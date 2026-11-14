@@ -94,6 +94,19 @@ describe('fetchEvents', () => {
     expect(result.facts.length).toBeGreaterThan(5);
   });
 
+  it.each([
+    ['United States', 'Madison Square Garden, New York, NY, US'],
+    ['USA', 'Madison Square Garden, New York, NY, US'],
+    ['United Kingdom', 'The O2, London, UK'],
+  ])('knows that %s is written as in "%s"', async (country, venue) => {
+    const page = String(recorded.markdown.data).replace('MEO Arena, Lisbon, Portugal', venue);
+    const scrape = vi.fn<Scrape>(async () => ({ ...recorded, markdown: { success: true, data: page } }));
+
+    const result = await fetchEvents(makeDeps({ client: stubClient({ scrape }) }), { city: 'Anywhere', country });
+
+    expect(result.facts.map((fact) => fact.venue)).toEqual([venue]);
+  });
+
   it('serves the second call from cache', async () => {
     const scrape = vi.fn<Scrape>(async () => recorded);
     const deps = makeDeps({ client: stubClient({ scrape }) });

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { assembleManifest, formatDateRange, sceneImageUrls, type AssembleInput } from '../src/pipeline/assemble';
 import { factMap, planScenes, templateLines, type Selection, type StoryScene } from '../src/pipeline/script';
 import { silentTimings, totalFrames } from '../src/pipeline/timing';
-import { christmasMarket, market, museum, park, placeFact, selection, tour, weather as weatherFact } from './fixtures/selection';
+import { christmasMarket, decemberClimate, market, museum, park, placeFact, selection, snowyClimate, tour, weather as weatherFact } from './fixtures/selection';
 
 const listing: ListingContext = {
   site: 'airbnb',
@@ -102,6 +102,41 @@ describe('assembleManifest', () => {
     const stay = assembleManifest(input(selection({ events: [], weather: [chilly] }))).scenes.find((scene) => scene.type === 'stay');
 
     expect(stay?.subtitle).toBe('−5 to 6 °C, 43% chance of rain');
+  });
+
+  it('puts the usual weather under the opening title', () => {
+    const hookOf = (sel: Selection) => assembleManifest(input(sel)).scenes.find((scene) => scene.type === 'hook');
+
+    expect(hookOf(selection({ climate: [snowyClimate] }))?.subtitle).toBe('12–16 Dec · usually −6 to 3 °C, snowy');
+    expect(hookOf(selection({ climate: [decemberClimate] }))?.subtitle).toBe('12–16 Dec · usually 9–15 °C, some rain');
+    expect(hookOf(selection())?.subtitle).toBe('12–16 Dec');
+  });
+
+  it('names the month instead of dates the listing did not give', () => {
+    const undated = selection({ climate: [decemberClimate], window: { start: '2026-12-01', end: '2026-12-15', fromListing: false } });
+    const hook = assembleManifest(input(undated)).scenes.find((scene) => scene.type === 'hook');
+
+    expect(hook?.subtitle).toBe('December · usually 9–15 °C, some rain');
+  });
+
+  it('opens on the photo of the place in season when there is one', () => {
+    const photo = { id: 'photo:season' as const, imageUrl: 'https://upload.wikimedia.org/thumb/innsbruck-winter.jpg', sourceId: 'wikimedia-commons' };
+    const sel = selection({ seasonPhoto: photo });
+    const made = assembleManifest(input(sel, { images: mirrored(sceneImageUrls(listing, sel)) }));
+
+    expect(sceneImageUrls(listing, sel)).toContain(photo.imageUrl);
+    expect(made.scenes.find((scene) => scene.type === 'hook')?.imageUrl).toBe('/media/innsbruck-winter.jpg');
+    // The listing's own photos then move one scene on, so its main photo is still shown.
+    expect(made.scenes.find((scene) => scene.type === 'stay')?.imageUrl).toBe('/media/hero.jpg');
+    expect(made.scenes.find((scene) => scene.type === 'outro')?.imageUrl).toBe('/media/second.jpg');
+  });
+
+  it('opens on the listing photo when the seasonal photo did not mirror', () => {
+    const photo = { id: 'photo:season' as const, imageUrl: 'https://upload.wikimedia.org/thumb/innsbruck-winter.jpg', sourceId: 'wikimedia-commons' };
+    const made = assembleManifest(input(selection({ seasonPhoto: photo }), { images: mirrored(sceneImageUrls(listing, selection())) }));
+
+    expect(made.scenes.find((scene) => scene.type === 'hook')?.imageUrl).toBe('/media/hero.jpg');
+    expect(made.scenes.find((scene) => scene.type === 'stay')?.imageUrl).toBe('/media/second.jpg');
   });
 
   it('names the venue of the event when it is known', () => {

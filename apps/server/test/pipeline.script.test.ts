@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_WORD_BUDGET, LINES_JSON_SCHEMA, factMap, planScenes, scriptWithGuard, templateLines, writeLines } from '../src/pipeline/script';
 import { validateLines } from '../src/pipeline/validateScript';
-import { christmasMarket, market, museum, park, placeFact, selection, weather } from './fixtures/selection';
+import { christmasMarket, cruise, market, museum, park, placeFact, selection, snowyClimate, tour, weather } from './fixtures/selection';
 
 const sel = selection();
 const plan = planScenes(sel);
@@ -228,6 +228,118 @@ describe('writeLines', () => {
 
   it('throws when the model does not return a list of strings', async () => {
     await expect(writeLines(vi.fn().mockResolvedValue({ lines: [1, 2] }), plan, facts, sel.place, 50)).rejects.toThrow();
+  });
+});
+
+describe('the accuracy guard on claims that are not numbers', () => {
+  const sintra = { ...tour, id: 'exp:sintra', title: 'Sintra and Cascais Day Trip', amount: 15 };
+  const fado = { ...cruise, id: 'exp:fado', title: 'Fado Show with Dinner', amount: 59, durationText: undefined };
+  const priced = selection({ experiences: [sintra, fado] });
+  const pricedPlan = planScenes(priced);
+  const pricedFacts = factMap(priced);
+  const experiencesLine = (line: string): string[] => goodLines.map((existing, index) => (index === 4 ? line : existing));
+  const verdict = (lines: string[], chosen = selection()) => validateLines(lines, planScenes(chosen), factMap(chosen), 65);
+
+  it('accepts each offer named with its own price', () => {
+    expect(validateLines(experiencesLine('Try a Sintra day trip from €15, or a Fado show from €59.'), pricedPlan, pricedFacts, 65)).toEqual({ ok: true });
+  });
+
+  it('rejects prices swapped between two offers', () => {
+    const result = validateLines(experiencesLine('Try a Sintra day trip from €59, or a Fado show from €15.'), pricedPlan, pricedFacts, 65);
+
+    expect(result.ok).toBe(false);
+    expect(JSON.stringify(result)).toMatch(/price/i);
+  });
+
+  it('rejects a price said before any offer is named', () => {
+    expect(validateLines(experiencesLine('From €15 there is plenty to book nearby.'), pricedPlan, pricedFacts, 65).ok).toBe(false);
+  });
+
+  it('rejects a month the event is not in', () => {
+    const concert = { ...christmasMarket, title: 'Bryan Adams', dateText: '20 November', venue: 'MEO Arena, Lisbon, Portugal' };
+    const sel2 = selection({ events: [concert] });
+
+    expect(verdict(withLine(5, 'Bryan Adams plays MEO Arena on 20 November.'), sel2)).toEqual({ ok: true });
+    expect(verdict(withLine(5, 'Bryan Adams plays MEO Arena on 20 December.'), sel2).ok).toBe(false);
+  });
+
+  it('rejects a month in a scene whose facts name none', () => {
+    expect(verdict(withLine(1, 'In December, Mercado da Ribeira is about 13 minutes on foot.')).ok).toBe(false);
+  });
+
+  it.each([
+    'Mercado da Ribeira has hundreds of reviews and is about 13 minutes on foot.',
+    'Mercado da Ribeira is half an hour away.',
+    'Mercado da Ribeira has free entry, about 13 minutes on foot.',
+    'Mercado da Ribeira is open until midnight, about 13 minutes on foot.',
+    'Mercado da Ribeira is now open, about 13 minutes on foot.',
+    'Head to Mercado da Ribeira tomorrow, about 13 minutes on foot.',
+    'Mercado da Ribeira is perfect this weekend, about 13 minutes on foot.',
+  ])('rejects "%s"', (line) => {
+    expect(verdict(withLine(1, line)).ok).toBe(false);
+  });
+
+  it('accepts a spelled-out number that is part of a name in the facts', () => {
+    const band = { ...christmasMarket, title: 'Twenty One Pilots', dateText: '20 November' };
+    const sel2 = selection({ events: [band] });
+
+    expect(verdict(withLine(5, 'Twenty One Pilots play on 20 November.'), sel2)).toEqual({ ok: true });
+  });
+
+  it('rejects "minus" before a temperature that is above zero', () => {
+    const mildSel = selection({ events: [], weather: [{ ...weather, tempMinC: 8, tempMaxC: 17 }] });
+
+    expect(verdict(withLine(5, 'Expect minus 8 to 17 degrees.'), mildSel).ok).toBe(false);
+    expect(verdict(withLine(5, 'Expect 8-17 degrees.'), mildSel)).toEqual({ ok: true });
+  });
+});
+
+describe('a stay with known usual weather', () => {
+  const wintry = selection({ climate: [snowyClimate], events: [], weather: [] });
+  const wintryPlan = planScenes(wintry);
+  const wintryFacts = factMap(wintry);
+
+  it('gives the opening scene the usual weather as its fact', () => {
+    expect(wintryPlan[0]).toEqual({ type: 'hook', factIds: ['climate:stay'] });
+    expect(planScenes(selection())[0]).toEqual({ type: 'hook', factIds: [] });
+  });
+
+  it('tells the model the month and the usual weather in words it can say', async () => {
+    const complete = vi.fn().mockResolvedValue({ lines: goodLines.slice(0, wintryPlan.length) });
+
+    await writeLines(complete, wintryPlan, wintryFacts, wintry.place, 58);
+
+    const [system, user] = complete.mock.calls[0] as [string, string];
+    expect(system).toContain('for a stay in January');
+    expect(system).toContain('The first line sets the scene');
+    expect(user).toContain('"month": "January"');
+    expect(user).toContain('"usualLow": "minus 6 °C"');
+    expect(user).toContain('"usualHigh": "3 °C"');
+    expect(user).toContain('"usually": "snowy"');
+  });
+
+  it('does not mention a month when the usual weather is not known', async () => {
+    const complete = vi.fn().mockResolvedValue({ lines: goodLines });
+
+    await writeLines(complete, plan, facts, sel.place, 58);
+
+    expect((complete.mock.calls[0] as [string])[0]).not.toContain('for a stay in');
+  });
+
+  it('lets the opening line say the usual temperatures, and nothing else', () => {
+    const lines = templateLines(wintryPlan, wintryFacts, wintry.place);
+    const said = (line: string): string[] => lines.map((existing, index) => (index === 0 ? line : existing));
+
+    expect(validateLines(said('Lisbon in January is usually minus 6 to 3 degrees and snowy.'), wintryPlan, wintryFacts, 58)).toEqual({ ok: true });
+    expect(validateLines(said('Lisbon in January is usually 6 to 3 degrees.'), wintryPlan, wintryFacts, 58).ok).toBe(false);
+    expect(validateLines(said('Lisbon in January is usually minus 12 degrees.'), wintryPlan, wintryFacts, 58).ok).toBe(false);
+  });
+
+  it('opens the template script with the month and the usual weather', () => {
+    const lines = templateLines(wintryPlan, wintryFacts, wintry.place);
+
+    expect(lines[0]).toBe('Lisbon in January: usually minus 6 to 3 degrees, snowy.');
+    expect(validateLines(lines, wintryPlan, wintryFacts, 58)).toEqual({ ok: true });
   });
 });
 

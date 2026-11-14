@@ -85,4 +85,23 @@ export interface WeatherFact {
   sourceId: string;
 }
 
-export type Fact = PlaceFact | ExperienceFact | EventFact | WeatherFact;
+export const CLIMATE_CONDITIONS = ['snowy', 'some snow', 'often rainy', 'some rain', 'mostly dry'] as const;
+export type ClimateConditions = (typeof CLIMATE_CONDITIONS)[number];
+
+/** What the weather is usually like at the place at this time of year, from the same dates in past years. */
+export interface ClimateFact {
+  id: string;
+  kind: 'climate';
+  /** The month the stay is mostly in: "January". */
+  month: string;
+  /** The usual daily low and high. */
+  tempMinC: number;
+  tempMaxC: number;
+  /** Share of days with at least a millimetre of precipitation, and with at least a centimetre of snow. */
+  wetDaysPercent: number;
+  snowDaysPercent: number;
+  conditions: ClimateConditions;
+  sourceId: string;
+}
+
+export type Fact = PlaceFact | ExperienceFact | EventFact | WeatherFact | ClimateFact;

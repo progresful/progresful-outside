@@ -128,7 +128,29 @@ describe('toPlaceFact', () => {
 });
 
 describe('fetchPlaces', () => {
-  const params = { interest: 'food' as const, locationText: 'Lisbon, Portugal', origin: lisbon };
+  const params = { interest: 'food' as const, query: 'local restaurants', locationText: 'Lisbon, Portugal', origin: lisbon };
+
+  it('searches Maps for the query it is given, whatever the interest usually searches', async () => {
+    const scrape = vi.fn().mockResolvedValue(scrapeResponse([rawPlace]));
+    const deps = makeDeps({ client: stubClient({ scrape }) });
+
+    await fetchPlaces(deps, { interest: 'nature', query: 'winter activities', locationText: 'Innsbruck, Austria', origin: lisbon });
+
+    expect((scrape.mock.calls[0] as [{ url: string }])[0].url).toBe(
+      'https://www.google.com/maps/search/winter%20activities%20near%20Innsbruck%2C%20Austria',
+    );
+  });
+
+  it('keeps the results of two queries for one interest apart', async () => {
+    const scrape = vi.fn().mockResolvedValue(scrapeResponse([rawPlace]));
+    const deps = makeDeps({ client: stubClient({ scrape }) });
+
+    await fetchPlaces(deps, { ...params, query: 'cosy restaurant' });
+    await fetchPlaces(deps, { ...params, query: 'local restaurants' });
+    await fetchPlaces(deps, { ...params, query: 'cosy restaurant' });
+
+    expect(scrape).toHaveBeenCalledTimes(2);
+  });
 
   it('scrapes maps with the prebuilt parser and returns facts with their source', async () => {
     const scrape = vi.fn().mockResolvedValue(scrapeResponse([rawPlace, { name: 'broken' }], 60_000));

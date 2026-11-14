@@ -1,8 +1,10 @@
-import type { EventFact, ExperienceFact, PlaceFact, VideoStatus, WeatherFact } from '@outside/shared';
+import type { ClimateFact, EventFact, ExperienceFact, PlaceFact, VideoStatus, WeatherFact } from '@outside/shared';
+import type { ClimateParams } from '../sources/climate';
 import type { MediaStore } from '../media/mediaStore';
 import type { EventsParams } from '../sources/events';
 import type { ExperiencesParams } from '../sources/experiences';
 import type { PlacesParams } from '../sources/places';
+import type { SeasonPhoto, SeasonPhotoParams } from '../sources/seasonPhoto';
 import type { SourceDeps, SourceResult } from '../sources/types';
 import type { WeatherParams } from '../sources/weather';
 import type { Complete } from './script';
@@ -23,6 +25,9 @@ export interface PipelineSources {
   experiences(deps: SourceDeps, p: ExperiencesParams): Promise<SourceResult<ExperienceFact>[]>;
   events(deps: SourceDeps, p: EventsParams): Promise<SourceResult<EventFact>>;
   weather(deps: SourceDeps, p: WeatherParams): Promise<SourceResult<WeatherFact>>;
+  /** What the weather is usually like on the stay's dates. Asked first: it decides what else is searched for. */
+  climate(deps: SourceDeps, p: ClimateParams): Promise<SourceResult<ClimateFact>>;
+  seasonPhoto(deps: SourceDeps, p: SeasonPhotoParams): Promise<SourceResult<SeasonPhoto>>;
 }
 
 export interface PipelineDeps extends SourceDeps {

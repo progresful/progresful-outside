@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CreditsExhaustedError } from '../src/contextdev/client';
 import { NotEnoughDataError, TEMPLATE_VERSION, runPipeline, type StageUpdate } from '../src/pipeline/run';
 import { alignFor, listing, memoryStore, pipelineDeps, source } from './fixtures/pipelineDeps';
-import { christmasMarket, placeFact, tour } from './fixtures/selection';
+import { christmasMarket, placeFact, snowyClimate, tour } from './fixtures/selection';
 
 const input = { videoId: 'abcdef0123456789', listing, interests: ['food', 'culture', 'nature'] as const };
 const request = { ...input, interests: [...input.interests] };
@@ -17,8 +17,8 @@ afterEach(() => {
 });
 
 describe('runPipeline', () => {
-  it('has a template version for the cache key', () => {
-    expect(TEMPLATE_VERSION).toBe(1);
+  it('has a template version for the cache key, raised when the video gained its seasonal opening', () => {
+    expect(TEMPLATE_VERSION).toBe(2);
   });
 
   it('emits stages in order and returns a valid manifest', async () => {
@@ -71,7 +71,165 @@ describe('runPipeline', () => {
 
     await runPipeline(deps, { ...request, listing: { ...listing, currency: 'GBP' } }, () => {});
 
-    expect(deps.sources.experiences).toHaveBeenCalledWith(expect.anything(), { city: 'Lisbon', country: 'Portugal', currency: 'GBP' });
+    expect(deps.sources.experiences).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ city: 'Lisbon', country: 'Portugal', currency: 'GBP' }),
+    );
+  });
+
+  it('passes the stay dates to the marketplaces', async () => {
+    const deps = pipelineDeps();
+
+    await runPipeline(deps, request, () => {});
+
+    expect(deps.sources.experiences).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ window: { start: '2026-12-12', end: '2026-12-16' } }),
+    );
+  });
+
+  describe('with the usual weather for the dates', () => {
+    const snowy = async () => ({ facts: [snowyClimate], source: source('open-meteo-archive', 'Open-Meteo (past years)') });
+    const queriesOf = (deps: ReturnType<typeof pipelineDeps>): string[] =>
+      vi.mocked(deps.sources.places).mock.calls.map(([, params]) => `${params.interest}: ${params.query}`);
+
+    it('asks for it at the listing and the stay dates', async () => {
+      const deps = pipelineDeps();
+
+      await runPipeline(deps, request, () => {});
+
+      expect(deps.sources.climate).toHaveBeenCalledWith(expect.anything(), {
+        lat: 38.7223,
+        lng: -9.1393,
+        window: { start: '2026-12-12', end: '2026-12-16', fromListing: true },
+        today: '2026-11-14',
+      });
+    });
+
+    it('searches for places that suit it', async () => {
+      const base = pipelineDeps();
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy) } };
+
+      await runPipeline(deps, { ...request, interests: ['nature', 'culture', 'adventure'] }, () => {});
+
+      expect(queriesOf(deps)).toEqual(['nature: winter activities', 'culture: museum', 'adventure: ski resort']);
+    });
+
+    it('searches the usual way when it is not known', async () => {
+      const deps = pipelineDeps();
+
+      await runPipeline(deps, { ...request, interests: ['nature', 'culture', 'adventure'] }, () => {});
+
+      expect(queriesOf(deps)).toEqual(['nature: park', 'culture: museum', 'adventure: outdoor activities']);
+    });
+
+    it('falls back to the usual search when the seasonal one finds nothing nearby', async () => {
+      const base = pipelineDeps();
+      const usual = vi.mocked(base.sources.places).getMockImplementation();
+      const places = vi.fn<typeof base.sources.places>(async (sourceDeps, params) => {
+        if (params.query === 'ski resort') {
+          return { facts: [], source: null };
+        }
+        if (params.query === 'winter activities') {
+          // Something was found, but a day's drive away.
+          return { facts: [placeFact('far', { interest: 'nature', distanceM: 300_000 })], source: source('google-maps:nature', 'Google Maps') };
+        }
+        return usual!(sourceDeps, params);
+      });
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places } };
+
+      const manifest = await runPipeline(deps, { ...request, interests: ['nature', 'culture', 'adventure'] }, () => {});
+
+      expect(queriesOf(deps).sort()).toEqual([
+        'adventure: outdoor activities',
+        'adventure: ski resort',
+        'culture: museum',
+        'nature: park',
+        'nature: winter activities',
+      ]);
+      expect(types(manifest).filter((type) => type === 'activity')).toHaveLength(3);
+    });
+
+    it('opens the video with it and cites where it came from', async () => {
+      const base = pipelineDeps();
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy) } };
+
+      const manifest = await runPipeline(deps, request, () => {});
+
+      expect(manifest.scenes[0]).toMatchObject({ type: 'hook', subtitle: '12–16 Dec · usually −6 to 3 °C, snowy', factIds: ['climate:stay'] });
+      expect(manifest.sources.map((entry) => entry.label)).toContain('Open-Meteo (past years)');
+    });
+
+    it('prefers a bookable offer that suits it', async () => {
+      const base = pipelineDeps();
+      const offers = [
+        { ...tour, id: 'exp:a', title: 'City Bus Tour', reviewCount: 9_000 },
+        { ...tour, id: 'exp:b', title: 'Old Town Walk', reviewCount: 8_000 },
+        { ...tour, id: 'exp:c', title: 'Harbour Stroll', reviewCount: 7_000 },
+        { ...tour, id: 'exp:d', title: 'Snowshoe Hike', reviewCount: 90 },
+      ];
+      const experiences = vi.fn(async () => [{ facts: offers, source: source('viator', 'Viator') }]);
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), experiences } };
+
+      const manifest = await runPipeline(deps, request, () => {});
+
+      // None of the four matches food, museums or nature; only the season lifts the least-reviewed one in.
+      expect(manifest.scenes.find((scene) => scene.type === 'experiences')?.items?.map((item) => item.title)).toContain('Snowshoe Hike');
+    });
+
+    it('still builds the video when it and the seasonal photo cannot be fetched', async () => {
+      const onSourceError = vi.fn();
+      const base = pipelineDeps({ onSourceError });
+      const deps = {
+        ...base,
+        sources: { ...base.sources, climate: vi.fn().mockRejectedValue(new Error('archive down')), seasonPhoto: vi.fn().mockRejectedValue(new Error('commons down')) },
+      };
+
+      const manifest = await runPipeline(deps, request, () => {});
+
+      expect(manifest.scenes[0]).toMatchObject({ type: 'hook', subtitle: '12–16 Dec', factIds: [] });
+      expect(onSourceError).toHaveBeenCalledWith('climate', expect.any(Error));
+      expect(onSourceError).toHaveBeenCalledWith('season-photo', expect.any(Error));
+    });
+  });
+
+  describe('with a photo of the place in season', () => {
+    const photo = { id: 'photo:season' as const, imageUrl: 'https://upload.wikimedia.org/thumb/lisbon-winter.jpg', sourceId: 'wikimedia-commons' };
+    const found = async () => ({ facts: [photo], source: source('wikimedia-commons', 'Wikimedia Commons') });
+
+    it('searches for the city in the season of the stay', async () => {
+      const deps = pipelineDeps();
+
+      await runPipeline(deps, request, () => {});
+
+      expect(deps.sources.seasonPhoto).toHaveBeenCalledWith(expect.anything(), { city: 'Lisbon', query: 'Lisbon winter' });
+    });
+
+    it('opens on it and credits Wikimedia Commons', async () => {
+      const base = pipelineDeps();
+      const deps = { ...base, sources: { ...base.sources, seasonPhoto: vi.fn(found) } };
+
+      const manifest = await runPipeline(deps, request, () => {});
+
+      expect(manifest.scenes[0]?.imageUrl).toMatch(/^\/media\//);
+      expect(manifest.scenes[0]?.imageUrl).not.toBe(manifest.scenes.at(-1)?.imageUrl);
+      expect(manifest.sources.map((entry) => entry.label)).toContain('Wikimedia Commons');
+    });
+
+    it('does not credit a photo that could not be downloaded', async () => {
+      const fetchMock = vi.fn(async (url: string | URL | Request) =>
+        String(url).includes('wikimedia.org')
+          ? new Response('', { status: 404 })
+          : new Response(new Uint8Array(10), { status: 200, headers: { 'content-type': 'image/jpeg' } }),
+      );
+      const base = pipelineDeps({ fetch: fetchMock as typeof fetch });
+      const deps = { ...base, sources: { ...base.sources, seasonPhoto: vi.fn(found) } };
+
+      const manifest = await runPipeline(deps, request, () => {});
+
+      expect(manifest.sources.map((entry) => entry.label)).not.toContain('Wikimedia Commons');
+      expect(manifest.scenes[0]?.imageUrl).toMatch(/^\/media\//);
+    });
   });
 
   it('shows an event only when it happens during the stay', async () => {

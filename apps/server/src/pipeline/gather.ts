@@ -1,5 +1,6 @@
 import {
   interestById,
+  type ClimateFact,
   type EventFact,
   type ExperienceFact,
   type InterestId,
@@ -7,10 +8,13 @@ import {
   type Source,
   type WeatherFact,
 } from '@outside/shared';
+import type { SeasonPhoto } from '../sources/seasonPhoto';
 import { CreditsExhaustedError } from '../contextdev/client';
 import type { TripWindow } from '../sources/tripWindow';
-import { emptyResult } from '../sources/types';
+import { emptyResult, type SourceResult } from '../sources/types';
 import type { NormalizedPlace } from './normalize';
+import { placeQuery, seasonOf, seasonPhotoQuery, type Season } from './season';
+import { WIDE_RADIUS_M } from './select';
 import type { PipelineDeps, StageUpdate } from './types';
 
 /** How long the pipeline waits for any one source before carrying on without it. */
@@ -21,6 +25,10 @@ export interface Gathered {
   experiences: ExperienceFact[];
   events: EventFact[];
   weather: WeatherFact[];
+  climate: ClimateFact[];
+  seasonPhoto?: SeasonPhoto;
+  /** The season the places and offers were searched for. */
+  season: Season;
   sources: Source[];
 }
 
@@ -65,9 +73,25 @@ function findingStage(interest: InterestId, index: number, count: number): Stage
   };
 }
 
+/**
+ * Places for one interest: searched the way the season calls for, and the usual way when that
+ * finds nothing within reach of the listing.
+ */
+async function placesFor(deps: PipelineDeps, ctx: GatherContext, season: Season, interest: InterestId): Promise<SourceResult<PlaceFact>> {
+  const { place } = ctx;
+  const search = (query: string): Promise<SourceResult<PlaceFact>> =>
+    guarded(deps, `places:${interest}`, emptyResult<PlaceFact>(), () =>
+      deps.sources.places(deps, { interest, query, locationText: place.locationText, origin: place }),
+    );
+  const { query, fallback } = placeQuery(interest, season);
+  const found = await search(query);
+  const withinReach = found.facts.some((fact) => fact.distanceM <= WIDE_RADIUS_M);
+  return fallback && !withinReach ? search(fallback) : found;
+}
+
 /** Fetches places for every interest at once, announcing each interest as the one before it lands. */
-async function gatherPlaces(deps: PipelineDeps, ctx: GatherContext, onStage: (update: StageUpdate) => void) {
-  const { interests, place } = ctx;
+async function gatherPlaces(deps: PipelineDeps, ctx: GatherContext, season: Season, onStage: (update: StageUpdate) => void) {
+  const { interests } = ctx;
   const waiting = new Set(interests);
   const announceNext = (): void => {
     const next = interests.find((interest) => waiting.has(interest));
@@ -81,9 +105,7 @@ async function gatherPlaces(deps: PipelineDeps, ctx: GatherContext, onStage: (up
   return Promise.all(
     interests.map(async (interest) => {
       try {
-        return await guarded(deps, `places:${interest}`, emptyResult<PlaceFact>(), () =>
-          deps.sources.places(deps, { interest, locationText: place.locationText, origin: place }),
-        );
+        return await placesFor(deps, ctx, season, interest);
       } finally {
         waiting.delete(interest);
         announceNext();
@@ -92,7 +114,11 @@ async function gatherPlaces(deps: PipelineDeps, ctx: GatherContext, onStage: (up
   );
 }
 
-/** Everything the web says about the area right now. Sources run in parallel; a missing one is skipped. */
+/**
+ * Everything the web says about the area right now. The usual weather for the dates is asked
+ * first, because it decides what places are searched for; the rest runs in parallel, and a
+ * missing source is skipped.
+ */
 export async function gather(
   deps: PipelineDeps,
   ctx: GatherContext,
@@ -100,22 +126,37 @@ export async function gather(
 ): Promise<Gathered> {
   const { place, window } = ctx;
   const area = { city: place.city, country: place.country };
-  const [places, experiences, events, weather] = await Promise.all([
-    gatherPlaces(deps, ctx, onStage),
+  const climate = await guarded(deps, 'climate', emptyResult<ClimateFact>(), () =>
+    deps.sources.climate(deps, { lat: place.lat, lng: place.lng, window, today: deps.today() }),
+  );
+  const season = seasonOf(climate.facts[0], window, place.lat);
+  const [places, experiences, events, weather, seasonPhoto] = await Promise.all([
+    gatherPlaces(deps, ctx, season, onStage),
     guarded(deps, 'experiences', [], () =>
-      deps.sources.experiences(deps, { ...area, ...(ctx.currency ? { currency: ctx.currency } : {}) }),
+      deps.sources.experiences(deps, {
+        ...area,
+        ...(ctx.currency ? { currency: ctx.currency } : {}),
+        window: { start: window.start, end: window.end },
+      }),
     ),
     guarded(deps, 'events', emptyResult<EventFact>(), () => deps.sources.events(deps, area)),
     guarded(deps, 'weather', emptyResult<WeatherFact>(), () =>
       deps.sources.weather(deps, { lat: place.lat, lng: place.lng, window, today: deps.today() }),
     ),
+    guarded(deps, 'season-photo', emptyResult<SeasonPhoto>(), () =>
+      deps.sources.seasonPhoto(deps, { city: place.city, query: seasonPhotoQuery(place.city, season) }),
+    ),
   ]);
-  const used = [...places, ...experiences, events, weather];
+  const used = [...places, ...experiences, events, weather, climate, seasonPhoto];
+  const photo = seasonPhoto.facts[0];
   return {
     places: places.flatMap((result) => result.facts),
     experiences: experiences.flatMap((result) => result.facts),
     events: events.facts,
     weather: weather.facts,
+    climate: climate.facts,
+    ...(photo ? { seasonPhoto: photo } : {}),
+    season,
     sources: used.flatMap((result) => (result.source && result.facts.length > 0 ? [result.source] : [])),
   };
 }

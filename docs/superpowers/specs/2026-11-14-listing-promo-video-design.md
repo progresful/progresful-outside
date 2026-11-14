@@ -111,7 +111,8 @@ ready:  ┌────────────────────┐
 | ready | Play icon and "What's outside". Nothing else. |
 | refreshing | After an interest or date change, the previous video stays playable while the new one builds. (After TTL expiry there is no previous video; the badge goes back to generating.) |
 | error | One quiet line and a retry button. |
-| hidden | No location could be read, or the server is unreachable. The page is left untouched. |
+| offline | The server is unreachable: "Server not running" and a retry button. Changed from "hidden" on 2026-11-14 (see §12.6): a badge that vanished read as a broken extension. |
+| hidden | No location could be read. The page is left untouched. |
 
 ### 5.3 Interests
 
@@ -134,7 +135,7 @@ Default length 20 s, hard range 10–30 s [decided]. 1280×720, 30 fps, landscap
 
 | # | Scene | Content | Tier |
 |---|---|---|---|
-| 1 | Hook | Listing hero photo, "Around <place>", trip dates if known. | must |
+| 1 | Hook | "Around <place>", trip dates if known, and what the weather is usually like then (§12.7). Photo of the place in season when one is found, else the listing's hero photo. | must |
 | 2 | Step outside | Street View of the street outside; falls back to a listing exterior photo. | should (key pending) |
 | 3–5 | Activities | One per top interest: photo, name, rating and review count, approximate walk/drive time, open-now status. | must |
 | 6 | Experiences | Two or three bookable experiences with live price, duration, rating, source. | must |
@@ -273,7 +274,7 @@ Estimated total: about 40 credits per cold video, less with city-level cache hit
 | Context.dev 402 (credits gone) | Loud server log; badge error. |
 | Script model fails or fails validation twice | Template script from the facts. |
 | Voice fails | Manifest without audio; captions carry the video. |
-| Server unreachable | Badge hidden; page untouched. |
+| Server unreachable | Badge says "Server not running" with a retry (§12.6). |
 
 ### 6.7 MP4 on demand [should]
 
@@ -331,3 +332,11 @@ Exact selectors and page fields · visual design and animation (after mocks) · 
 3. End card: out.
 4. Cut line: none drawn. §8 is a build order, not a scope cut.
 5. Cache: 6 h for everything — scrape results and videos alike (replaces the earlier 2 h scrape TTL).
+6. **Server down is shown, not hidden** (after the first hands-on test). The badge says "Server not running" with a retry.
+7. **The video follows the time of year of the stay** (requested after trying Innsbruck in January and getting green parks):
+   - **Usual weather.** For the stay's dates the server reads the same dates in the last three years from Open-Meteo's archive: usual low and high, and how often it rains or snows. This works for a stay months away, where no forecast reaches. It is a fact like any other: shown under the opening title ("15–20 Jan · usually −6 to 3 °C, snowy") and spoken in the opening line ("Innsbruck in January is usually…").
+   - **Season.** How the stay feels is derived from that usual weather, not from the calendar: snowy, cold, mild, warm or hot. When the usual weather cannot be fetched, nothing is assumed (January is beach weather in Tenerife).
+   - **Places.** Each interest's Maps search is swapped for one that suits the season where it matters — nature in snow becomes "winter activities", adventure "ski resort", water "thermal bath", food "cosy restaurant"; in heat, food becomes "restaurant with terrace"; shopping before Christmas becomes "Christmas market". If the seasonal search finds nothing within 25 km, the usual search runs instead.
+   - **Experiences.** GetYourGuide is asked for the stay's dates (Viator ignores dates). An offer whose title suits the season (ski, snowshoe, sleigh… / boat, kayak…) is picked first.
+   - **Pictures.** The opening scene shows a photo of the place in that season from Wikimedia Commons, used only when its title names the place, and credited in the outro. Place photos stay Google's cover photos, which seasonal searches make far more likely to fit; they are not checked for season.
+   - **Voiceover.** The model is told the month, may open with the usual weather, and may let the other lines' wording suit the month — without adding any fact.

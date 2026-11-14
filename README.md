@@ -58,7 +58,7 @@ Open `chrome-extension://<extension id>/player.html?sample=1` (the id is on the 
 ## Test
 
 ```bash
-pnpm test             # all packages (534 tests)
+pnpm test             # all packages
 pnpm typecheck
 pnpm test:coverage    # shared 83 %, video 74 %, server 96 %, extension 84 % of statements
 pnpm check:live       # the real thing: see below
@@ -73,19 +73,37 @@ use a Chromium other than the one Playwright downloads (`pnpm exec playwright in
 
 | Scene | Live source | Notes |
 |---|---|---|
-| Three places, one per interest | Google Maps via Context.dev | rating, walking or driving time, photo, "Open now" worked out when the video plays |
-| Experiences with prices | Viator and GetYourGuide results pages via Context.dev | best-reviewed offer per interest; per-person prices only |
-| During your stay | Songkick via Context.dev, else Open-Meteo | a concert inside the trip dates, otherwise the weather outlook |
+| Opening | Open-Meteo archive, Wikimedia Commons | the month and what the weather is usually like then ("15–20 Jan · usually −6 to 3 °C, snowy"), over a photo of the place in that season |
+| Three places, one per interest | Google Maps via Context.dev | searched to suit the season; rating, walking or driving time, photo, "Open now" worked out when the video plays |
+| Experiences with prices | Viator and GetYourGuide results pages via Context.dev | best-reviewed offer for the season and per interest; per-person prices only; GetYourGuide is asked for the stay's dates |
+| During your stay | Songkick via Context.dev, else Open-Meteo forecast | a concert inside the trip dates, otherwise the forecast when the stay is within 15 days |
 | Voiceover | OpenAI writes one line per scene, ElevenLabs speaks it | a guard rejects any number that is not in that scene's facts |
 
 Everything fetched is kept for 6 hours, so a second visit is instant; the video says when its oldest fact
 was fetched. How the sources were chosen, and what was tried and dropped (Airbnb Experiences, Tripadvisor,
 Eventbrite), is in `docs/spikes/2026-11-14-sources.md`.
 
+### It follows the time of year
+
+The stay's dates decide what the video shows. The server reads the same dates in the last three years from
+Open-Meteo's archive, so it knows what January in Innsbruck is usually like even though no forecast reaches
+that far. From that it works out how the stay will feel (snowy, cold, mild, warm, hot) and:
+
+- searches Maps for what suits it: "winter activities", "ski resort", "thermal bath" and "cosy restaurant" in
+  snow; "restaurant with terrace" and "rooftop bar" in heat; "Christmas market" in the weeks before Christmas.
+  If a seasonal search finds nothing within 25 km, the usual search runs instead;
+- prefers a bookable offer that suits it (ski, snowshoe, sleigh… or boat, kayak…);
+- opens on a photo of the place in that season, when Wikimedia Commons has one whose title names the place;
+- lets the voiceover open with the month and the usual weather.
+
+When the usual weather cannot be fetched, nothing is assumed and the video is built the plain way.
+Place photos are Google's cover photos: seasonal searches make them fit far more often, but a park found in
+winter can still show green trees.
+
 ## Limits worth knowing
 
 - **Context.dev allows a free organisation 10 requests a minute.** A new video in a new city uses 6 (8 with five
-  interests). The server queues beyond that rather than fail, so a second new city inside the same minute
+  interests, one more for each seasonal search that had to fall back). The server queues beyond that rather than fail, so a second new city inside the same minute
   gets a thinner video or "Not enough live data"; a retry a minute later works. On a bigger plan, set
   `CONTEXT_DEV_RPM` in `.env`.
 - Typical times, measured on real listings: 11–13 s for a new city, 4–8 s when the city is cached, instant when

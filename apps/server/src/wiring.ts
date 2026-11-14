@@ -10,9 +10,11 @@ import { createDiskMediaStore } from './media/mediaStore';
 import { createOpenAiComplete } from './pipeline/openaiComplete';
 import { runPipeline, type PipelineDeps, type PipelineSources } from './pipeline/run';
 import { synthesize } from './pipeline/voice';
+import { fetchClimate } from './sources/climate';
 import { fetchEvents } from './sources/events';
 import { fetchExperiences } from './sources/experiences';
 import { fetchPlaces } from './sources/places';
+import { fetchSeasonPhoto } from './sources/seasonPhoto';
 import { fetchWeather } from './sources/weather';
 
 const SWEEP_INTERVAL_MS = 10 * 60 * 1000;
@@ -25,7 +27,14 @@ export interface Runtime {
 
 /** The live-web sources in use. */
 function liveSources(): PipelineSources {
-  return { places: fetchPlaces, experiences: fetchExperiences, events: fetchEvents, weather: fetchWeather };
+  return {
+    places: fetchPlaces,
+    experiences: fetchExperiences,
+    events: fetchEvents,
+    weather: fetchWeather,
+    climate: fetchClimate,
+    seasonPhoto: fetchSeasonPhoto,
+  };
 }
 
 /** Builds every real dependency from the configuration. `onSourceError` receives skipped-source failures. */

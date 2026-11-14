@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { CreditsExhaustedError, type ContextDevClient, type ScrapeResponse } from '../src/contextdev/client';
-import { EXPERIENCE_SOURCES, fetchCountryFor, fetchExperiences, toExperienceFact } from '../src/sources/experiences';
+import { EXPERIENCE_SOURCES, MARKETPLACE_DEADLINE_MS, fetchCountryFor, fetchExperiences, toExperienceFact } from '../src/sources/experiences';
 import { NOW, makeDeps, stubClient } from './helpers';
 
 function recorded(name: string): ScrapeResponse {
@@ -86,6 +86,30 @@ describe('fetchExperiences', () => {
     }
   });
 
+  it('asks GetYourGuide for the stay dates, which Viator cannot take', async () => {
+    const scrape = recordedScrape();
+    const window = { start: '2027-01-15', end: '2027-01-20' };
+
+    await fetchExperiences(makeDeps({ client: stubClient({ scrape }) }), { ...lisbon, window });
+
+    expect(scrape.mock.calls.map((call) => call[0].url).sort()).toEqual([
+      'https://www.getyourguide.com/s/?q=Lisbon&date_from=2027-01-15&date_to=2027-01-20',
+      'https://www.viator.com/searchResults/all?text=Lisbon',
+    ]);
+  });
+
+  it('fetches dated results again for other dates, and undated ones once', async () => {
+    const scrape = recordedScrape();
+    const deps = makeDeps({ client: stubClient({ scrape }) });
+
+    await fetchExperiences(deps, { ...lisbon, window: { start: '2027-01-15', end: '2027-01-20' } });
+    await fetchExperiences(deps, { ...lisbon, window: { start: '2027-07-10', end: '2027-07-17' } });
+
+    const urls = scrape.mock.calls.map((call) => String(call[0].url));
+    expect(urls.filter((url) => url.includes('viator.com'))).toHaveLength(1);
+    expect(urls.filter((url) => url.includes('getyourguide.com'))).toHaveLength(2);
+  });
+
   it('returns priced facts per source with the page they came from', async () => {
     const results = await fetchExperiences(makeDeps({ client: stubClient({ scrape: recordedScrape() }) }), lisbon);
 
@@ -98,6 +122,20 @@ describe('fetchExperiences', () => {
       expect(fact.amount).toBeGreaterThan(0);
       expect(fact.url).toMatch(/^https:\/\//);
     }
+  });
+
+  it('drops Viator results when the page it resolved to is in another country', async () => {
+    // "Lisbon" resolved to Lisbon, Portugal: no use to a listing in Lisbon, Ohio.
+    const results = await fetchExperiences(makeDeps({ client: stubClient({ scrape: recordedScrape() }) }), { city: 'Lisbon', country: 'United States' });
+
+    expect(results.find((result) => result.source?.id === 'viator')).toBeUndefined();
+    expect(results.flatMap((result) => result.facts).some((fact) => fact.sourceId === 'viator')).toBe(false);
+  });
+
+  it('keeps Viator results when the listing names no separate country', async () => {
+    const results = await fetchExperiences(makeDeps({ client: stubClient({ scrape: recordedScrape() }) }), { city: 'Lisbon', country: 'Lisbon' });
+
+    expect(results.find((result) => result.source?.id === 'viator')?.facts).toHaveLength(24);
   });
 
   it('serves the second call for the same city from cache', async () => {
@@ -121,6 +159,22 @@ describe('fetchExperiences', () => {
     });
 
     const results = await fetchExperiences(makeDeps({ client: stubClient({ scrape }), onSourceError }), lisbon);
+
+    expect(results.filter((result) => result.facts.length > 0).map((result) => result.source?.id)).toEqual(['getyourguide']);
+    expect(onSourceError).toHaveBeenCalledWith('viator', expect.any(Error));
+  });
+
+  it('answers with the marketplaces that made it when another never does', async () => {
+    vi.useFakeTimers();
+    const onSourceError = vi.fn();
+    const scrape = vi.fn<Scrape>((body) =>
+      String(body.url).includes('viator.com') ? new Promise<ScrapeResponse>(() => {}) : Promise.resolve(recorded('gyg-lisbon')),
+    );
+
+    const pending = fetchExperiences(makeDeps({ client: stubClient({ scrape }), onSourceError }), lisbon);
+    await vi.advanceTimersByTimeAsync(MARKETPLACE_DEADLINE_MS);
+    const results = await pending;
+    vi.useRealTimers();
 
     expect(results.filter((result) => result.facts.length > 0).map((result) => result.source?.id)).toEqual(['getyourguide']);
     expect(onSourceError).toHaveBeenCalledWith('viator', expect.any(Error));

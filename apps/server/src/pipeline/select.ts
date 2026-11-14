@@ -8,7 +8,8 @@ const MAX_ACTIVITY_SCENES = 3;
 const MIN_RATING = 4.2;
 const MIN_REVIEWS = 50;
 const NEAR_RADIUS_M = 3_000;
-const WIDE_RADIUS_M = 25_000;
+/** How far a place may be from the listing and still count as "around" it. */
+export const WIDE_RADIUS_M = 25_000;
 
 const WALK_LIMIT_M = 2_000;
 const WALK_M_PER_MIN = 80;
@@ -134,30 +135,44 @@ function sameOffer(a: string, b: string): boolean {
   return total > 0 && shared / total >= SAME_OFFER_OVERLAP;
 }
 
-function matchesInterest(title: string, interest: InterestId): boolean {
-  return interestById(interest).experienceKeywords.some((word) => {
+/** Whether the title has any of the words, as whole words: "art" is not in "party". */
+function hasAnyWord(title: string, words: readonly string[]): boolean {
+  return words.some((word) => {
     const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu').test(title);
   });
 }
 
+function matchesInterest(title: string, interest: InterestId): boolean {
+  return hasAnyWord(title, interestById(interest).experienceKeywords);
+}
+
 /**
- * Up to three bookable experiences: the best-reviewed one for each interest in the order the
- * user picked them, then the best of the rest. Only well-reviewed offers, each tour once.
+ * Up to three bookable experiences: first the best-reviewed one that suits the season, then the
+ * best one for each interest in the order the user picked them, then the best of the rest.
+ * Only well-reviewed offers, each tour once.
  */
-export function selectExperiences(offers: readonly ExperienceFact[], interests: readonly InterestId[]): ExperienceFact[] {
+export function selectExperiences(
+  offers: readonly ExperienceFact[],
+  interests: readonly InterestId[],
+  seasonWords: readonly string[] = [],
+): ExperienceFact[] {
   const ranked = offers.filter(isWellReviewed).sort((a, b) => experienceScore(b) - experienceScore(a));
   const pool = ranked.reduce<RatedExperience[]>(
     (kept, offer) => (kept.some((other) => sameOffer(other.title, offer.title)) ? kept : [...kept, offer]),
     [],
   );
-  const perInterest = interests.reduce<RatedExperience[]>((picked, interest) => {
-    if (picked.length >= MAX_EXPERIENCES) {
-      return picked;
-    }
-    const best = pool.find((offer) => !picked.includes(offer) && matchesInterest(offer.title, interest));
-    return best ? [...picked, best] : picked;
-  }, []);
+  const inSeason = pool.find((offer) => hasAnyWord(offer.title, seasonWords));
+  const perInterest = interests.reduce<RatedExperience[]>(
+    (picked, interest) => {
+      if (picked.length >= MAX_EXPERIENCES) {
+        return picked;
+      }
+      const best = pool.find((offer) => !picked.includes(offer) && matchesInterest(offer.title, interest));
+      return best ? [...picked, best] : picked;
+    },
+    inSeason ? [inSeason] : [],
+  );
   const rest = pool.filter((offer) => !perInterest.includes(offer));
   return [...perInterest, ...rest].slice(0, MAX_EXPERIENCES);
 }

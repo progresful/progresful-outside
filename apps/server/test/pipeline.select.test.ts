@@ -237,6 +237,27 @@ describe('selectExperiences', () => {
     expect(selectExperiences(offers, [])).toHaveLength(2);
   });
 
+  it('puts an offer that suits the season first', () => {
+    const offers = [
+      offer('Sintra Day Trip', { reviewCount: 20_000 }),
+      offer('Food and Wine Walking Tour', { reviewCount: 5_000 }),
+      offer('Snowshoe Hike with a Guide', { reviewCount: 60 }),
+      offer('Ski Day Pass', { reviewCount: 300 }),
+    ];
+
+    expect(titles(selectExperiences(offers, ['food'], ['ski', 'snowshoe']))).toEqual([
+      'Ski Day Pass',
+      'Food and Wine Walking Tour',
+      'Sintra Day Trip',
+    ]);
+  });
+
+  it('chooses as before when nothing suits the season', () => {
+    const offers = [offer('Sintra Day Trip', { reviewCount: 20_000 }), offer('Food Tour', { reviewCount: 5_000 })];
+
+    expect(titles(selectExperiences(offers, ['food'], ['ski']))).toEqual(['Food Tour', 'Sintra Day Trip']);
+  });
+
   it('returns at most three', () => {
     const offers = ['A', 'B', 'C', 'D', 'E'].map((title) => offer(title));
 

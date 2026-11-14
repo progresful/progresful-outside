@@ -15,6 +15,9 @@ const SYMBOLS: ReadonlyArray<readonly [string, string]> = [
   ['$', 'USD'],
 ];
 
+/** A price is a few characters; a longer text is not one, and is not worth scanning. */
+const MAX_PRICE_TEXT_CHARS = 200;
+
 const NUMBER = String.raw`\d+(?:[.,]\d+)*`;
 const MARKER = String.raw`US\$|CA\$|A\$|€|£|\$|\b[A-Z]{3}\b`;
 const MARKER_THEN_NUMBER = new RegExp(`(${MARKER})\\s*(${NUMBER})`, 'g');
@@ -87,6 +90,9 @@ export function parsePrice(text: string | number | null | undefined, currencyHin
   const hinted = currencyOf(currencyHint);
   if (typeof text === 'number') {
     return Number.isFinite(text) && text > 0 && hinted !== null ? { amount: text, currency: hinted } : null;
+  }
+  if (text.length > MAX_PRICE_TEXT_CHARS) {
+    return null;
   }
   const marked = markedPrice(text);
   if (marked) {

@@ -59,6 +59,7 @@ const LISTING_PHOTOS_SHOWN = 3;
 /** The original URLs of every image a video for this selection can show, without duplicates. */
 export function sceneImageUrls(listing: ListingContext, sel: Selection): string[] {
   const candidates = [
+    sel.seasonPhoto?.imageUrl,
     ...listing.photos.slice(0, LISTING_PHOTOS_SHOWN),
     ...sel.places.map((place) => place.imageUrl),
     firstExperienceImage(sel),
@@ -70,6 +71,15 @@ export function sceneImageUrls(listing: ListingContext, sel: Selection): string[
 function temperatureRange(min: number, max: number): string {
   const shown = (celsius: number): string => (celsius < 0 ? `−${Math.abs(celsius)}` : String(celsius));
   return min < 0 || max < 0 ? `${shown(min)} to ${shown(max)}` : `${min}–${max}`;
+}
+
+/** "12–16 Dec · usually −6 to 3 °C, snowy"; the month stands in for dates the listing did not give. */
+function hookSubtitle(sel: Selection, fact: Fact | undefined): string | undefined {
+  const dates = sel.window.fromListing ? formatDateRange(sel.window.start, sel.window.end) : undefined;
+  if (fact?.kind !== 'climate') {
+    return dates;
+  }
+  return `${dates ?? fact.month} · usually ${temperatureRange(fact.tempMinC, fact.tempMaxC)} °C, ${fact.conditions}`;
 }
 
 function stayText(fact: Fact | undefined): string | undefined {
@@ -86,8 +96,11 @@ function sceneContent(scene: StoryScene, input: AssembleInput, facts: ReadonlyMa
   const { sel, listing, images } = input;
   const mirrored = (url: string | undefined): string | undefined => (url ? images.get(url) : undefined);
   const listingPhoto = mirrored(listing.photos[0]);
-  const stayPhoto = mirrored(listing.photos[1]) ?? listingPhoto;
-  const outroPhoto = mirrored(listing.photos[2]) ?? stayPhoto;
+  const seasonPhoto = mirrored(sel.seasonPhoto?.imageUrl);
+  // When the opening shows the place in season, the listing's own photos each move one scene on.
+  const laterPhotos = seasonPhoto ? listing.photos : listing.photos.slice(1);
+  const stayPhoto = mirrored(laterPhotos[0]) ?? listingPhoto;
+  const outroPhoto = mirrored(laterPhotos[1]) ?? stayPhoto;
   const sceneFacts = scene.factIds.flatMap((id) => facts.get(id) ?? []);
   const first = sceneFacts[0];
 
@@ -95,8 +108,8 @@ function sceneContent(scene: StoryScene, input: AssembleInput, facts: ReadonlyMa
     case 'hook':
       return {
         title: `Around ${sel.place.city}`,
-        subtitle: sel.window.fromListing ? formatDateRange(sel.window.start, sel.window.end) : undefined,
-        imageUrl: listingPhoto,
+        subtitle: hookSubtitle(sel, first),
+        imageUrl: seasonPhoto ?? listingPhoto,
       };
     case 'activity': {
       if (first?.kind !== 'place') {

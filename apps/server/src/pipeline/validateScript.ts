@@ -1,4 +1,5 @@
 import type { Fact } from '@outside/shared';
+import { wordingProblems } from './claims';
 import type { PlannedScene } from './script';
 import { travelLabel } from './select';
 
@@ -9,12 +10,6 @@ const BUDGET_SLACK_WORDS = 10;
 const TOLERANCE = 1e-9;
 
 const NUMBER_TOKEN = /\d+(?:[.,]\d+)*/g;
-/** The voiceover is recorded once and replayed for hours, so it must not claim anything about "now". */
-const STALE_PHRASE = /\b(open now|right now|today|tonight|this evening|currently open)\b/i;
-const SPELLED_LARGE =
-  /\b(eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand)\b/i;
-const SPELLED_WITH_UNIT =
-  /\b(one|two|three|four|five|six|seven|eight|nine|ten)[\s-]+(minutes?|mins?|hours?|euros?|dollars?|pounds?|stars?|km|kilomet(?:re|er)s?|miles?|degrees?|percent)\b/i;
 
 function toNumber(token: string): number {
   const thousands = /^\d{1,3}(,\d{3})+$/.test(token);
@@ -46,19 +41,26 @@ function allowedNumbers(fact: Fact): number[] {
       return [...numbersIn(fact.title), ...numbersIn(fact.dateText), ...numbersIn(fact.venue)];
     case 'weather':
       return [fact.tempMinC, fact.tempMaxC, fact.precipitationChance];
+    case 'climate':
+      return [fact.tempMinC, fact.tempMaxC];
   }
 }
 
-/** "-19", "−19" and "minus 19" all say a negative number; the digits alone do not. */
-const MINUS_BEFORE = /(?:-|−|\bminus\s+)$/i;
+/** "−19" and "minus 19" can only mean a negative number. */
+const EXPLICIT_MINUS = /(?:−|\bminus\s+)$/i;
+/** A hyphen may be a minus ("-19") or a range ("8-17 degrees"). */
+const HYPHEN = /-$/;
 
 /**
  * Whether a number in a line is one of the scene's facts. A fact below zero must be said with its
- * minus; a hyphen before a positive fact ("8-17 degrees") is a range, not a sign.
+ * minus, and "minus" must not be put before a fact above zero; a bare hyphen is read either way.
  */
 function isAllowed(value: number, textBefore: string, allowed: readonly number[]): boolean {
   const matches = (wanted: number): boolean => allowed.some((fact) => Math.abs(fact - wanted) < TOLERANCE);
-  return matches(value) || (MINUS_BEFORE.test(textBefore) && matches(-value));
+  if (EXPLICIT_MINUS.test(textBefore)) {
+    return matches(-value);
+  }
+  return matches(value) || (HYPHEN.test(textBefore) && matches(-value));
 }
 
 function wordCount(text: string): number {
@@ -70,26 +72,22 @@ function lineProblems(line: string, scene: PlannedScene, facts: ReadonlyMap<stri
   if (line.trim().length === 0) {
     return [`${label}: the line is empty`];
   }
-  const allowed = scene.factIds.flatMap((id) => {
-    const fact = facts.get(id);
-    return fact ? allowedNumbers(fact) : [];
-  });
+  const sceneFacts = scene.factIds.flatMap((id) => facts.get(id) ?? []);
+  const allowed = sceneFacts.flatMap(allowedNumbers);
   const invented = [...line.matchAll(NUMBER_TOKEN)]
     .filter((match) => !isAllowed(toNumber(match[0]), line.slice(0, match.index), allowed))
     .map((match) => `${label}: the number ${match[0]} is not in the facts for that scene`);
-  const stale = STALE_PHRASE.exec(line);
-  const spelled = SPELLED_LARGE.exec(line) ?? SPELLED_WITH_UNIT.exec(line);
   return [
     ...invented,
-    ...(stale ? [`${label}: says "${stale[0].toLowerCase()}", which goes stale after recording`] : []),
-    ...(spelled ? [`${label}: spells out the number "${spelled[0]}"; use digits from the facts`] : []),
+    ...wordingProblems(line, sceneFacts, label),
     ...(wordCount(line) > MAX_WORDS_PER_LINE ? [`${label}: longer than ${MAX_WORDS_PER_LINE} words`] : []),
   ];
 }
 
 /**
  * The accuracy guard for the voiceover. A line may only say numbers that belong to the facts of
- * its own scene, and nothing that would be wrong a few hours after recording.
+ * its own scene, each price with the offer it belongs to, and nothing that would be wrong a few
+ * hours after recording or that no fact backs.
  */
 export function validateLines(
   lines: readonly string[],

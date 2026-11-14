@@ -1,5 +1,6 @@
 import type { EventFact, Source } from '@outside/shared';
 import { scrapeKey } from '../cache/keys';
+import { countryNames, fold } from './country';
 import { markdownLinks } from './markdown';
 import { cachedResult, scrapeMarkdownPage } from './page';
 import type { SourceDeps, SourceResult } from './types';
@@ -108,17 +109,21 @@ export function venueName(venue: string | undefined): string | undefined {
   return name ? name : undefined;
 }
 
-function fold(text: string): string {
-  return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
-}
-
 /**
  * A text search for "Lisbon" also finds Lisbon, Ohio. An event is kept only when its venue names
  * the listing's country (or its city, when the listing gives no separate country).
  */
 function isNearby(event: RawEvent, p: EventsParams): boolean {
-  const place = fold(p.country) === fold(p.city) ? fold(p.city) : fold(p.country);
-  return event.venue !== undefined && place.length > 0 && fold(event.venue).includes(place);
+  if (event.venue === undefined) {
+    return false;
+  }
+  const venue = fold(event.venue);
+  if (fold(p.country) === fold(p.city)) {
+    return fold(p.city).length > 0 && venue.includes(fold(p.city));
+  }
+  // The country closes the venue line, written out ("Portugal") or abbreviated ("US", "UK").
+  const lastPart = venue.split(',').pop()?.trim() ?? '';
+  return countryNames(p.country).some((name) => name.length > 0 && (lastPart === name || (name.length > 3 && venue.includes(name))));
 }
 
 function toEventFact(raw: RawEvent): EventFact {

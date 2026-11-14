@@ -1,4 +1,4 @@
-import { interestById, type InterestId, type PlaceFact, type Source } from '@outside/shared';
+import type { InterestId, PlaceFact, Source } from '@outside/shared';
 import tzlookup from 'tz-lookup';
 import { z } from 'zod';
 import { scrapeKey } from '../cache/keys';
@@ -38,6 +38,8 @@ export function mapsSearchRequest(searchText: string): Record<string, unknown> &
 
 export interface PlacesParams {
   interest: InterestId;
+  /** What to search Maps for: the interest's usual query, or one that suits the season. */
+  query: string;
   locationText: string;
   origin: LatLng;
 }
@@ -114,8 +116,7 @@ async function scrapePlaces(
   sourceId: string,
   key: string,
 ): Promise<SourceResult<PlaceFact>> {
-  const query = interestById(p.interest).mapsQueries[0] ?? p.interest;
-  const request = mapsSearchRequest(`${query} near ${p.locationText}`);
+  const request = mapsSearchRequest(`${p.query} near ${p.locationText}`);
   const { url } = request;
   const res = await deps.client.scrape(request);
   const results = res.parsed.success === true ? MapsResultsSchema.safeParse(res.parsed.data) : null;
@@ -139,6 +140,7 @@ export async function fetchPlaces(deps: SourceDeps, p: PlacesParams): Promise<So
   const sourceId = `google-maps:${p.interest}`;
   const key = scrapeKey('places', {
     interest: p.interest,
+    query: p.query.trim().toLowerCase(),
     lat: round2(p.origin.lat),
     lng: round2(p.origin.lng),
   });

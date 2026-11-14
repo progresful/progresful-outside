@@ -11,10 +11,10 @@ export const IMAGE_HOST_ALLOWLIST: readonly string[] = [
   'bstatic.com', // Booking.com listing photos
   'googleusercontent.com', // Google Maps place photos
   'ggpht.com', // Google Maps place photos
-  // Experience and event image hosts: provisional until the source spike confirms them.
+  'tacdn.com', // Viator tour photos
   'getyourguide.com',
-  'tacdn.com',
   'viator.com',
+  'wikimedia.org', // Wikimedia Commons: the photo of the place in season
 ];
 
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
