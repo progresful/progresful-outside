@@ -53,6 +53,7 @@ interface ActiveListing {
 export function createPageController(deps: PageDeps): PageController {
   let visit = 0;
   let currentUrl: string | null = null;
+  let currentVisitKey: string | null = null;
   let retryTimer: unknown;
   let active: ActiveListing | null = null;
   let badgeState: BadgeState = { kind: 'hidden' };
@@ -70,9 +71,26 @@ export function createPageController(deps: PageDeps): PageController {
     badgeState = { kind: 'hidden' };
   };
 
+  /** Plays the video if the server still has it; the session starts a new build when it does not. */
+  const play = (videoId: string): void => {
+    const session = active?.session;
+    const mine = visit;
+    if (!session) {
+      return;
+    }
+    session
+      .stillReady(videoId)
+      .then((ready) => {
+        if (ready && mine === visit) {
+          deps.openPlayer(videoId);
+        }
+      })
+      .catch(() => undefined); // an unanswered check opens nothing; the badge already says why
+  };
+
   const activate = (adapter: SiteAdapter, listing: ListingContext): void => {
     const badge = deps.mount(() => adapter.findGallery(deps.doc), {
-      onPlay: deps.openPlayer,
+      onPlay: play,
       onRetry: () => active?.session.restart(),
     });
     const session = deps.createSession((state) => {
@@ -104,6 +122,7 @@ export function createPageController(deps: PageDeps): PageController {
     currentUrl = url;
     const mine = visit;
     const match = deps.adapterFor(url);
+    currentVisitKey = match?.adapter.visitKey(url) ?? null;
     if (!match) {
       return;
     }
@@ -118,10 +137,17 @@ export function createPageController(deps: PageDeps): PageController {
   };
 
   const onUrl = (url: string): void => {
-    if (url !== currentUrl) {
-      // If settings cannot be read the page is simply left alone.
-      enter(url).catch(teardown);
+    if (url === currentUrl) {
+      return;
     }
+    const visitKey = deps.adapterFor(url)?.adapter.visitKey(url) ?? null;
+    if (visitKey !== null && visitKey === currentVisitKey) {
+      // Same listing, same dates: a photo tour or share dialog rewrote the address. Nothing to redo.
+      currentUrl = url;
+      return;
+    }
+    // If settings cannot be read the page is simply left alone.
+    enter(url).catch(teardown);
   };
 
   return {
@@ -142,7 +168,7 @@ export function createPageController(deps: PageDeps): PageController {
     },
     playCurrent(): void {
       if (badgeState.kind === 'ready' || badgeState.kind === 'refreshing') {
-        deps.openPlayer(badgeState.videoId);
+        play(badgeState.videoId);
       }
     },
     retry(): void {
@@ -156,6 +182,7 @@ export function createPageController(deps: PageDeps): PageController {
     stop(): void {
       teardown();
       currentUrl = null;
+      currentVisitKey = null;
     },
   };
 }

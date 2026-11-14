@@ -128,6 +128,46 @@ describe('listing session', () => {
     expect(h.states().at(-1)).toEqual({ kind: 'ready', videoId: 'v1' });
   });
 
+  it('confirms a video the server still has, without touching the badge', async () => {
+    const replies = [created('v1', 'ready'), progress('ready')];
+    const h = harness(async () => replies.shift());
+    const session = createListingSession(h.deps);
+    session.start(listing('1'));
+    await flush();
+    const shown = h.states().length;
+
+    expect(await session.stillReady('v1')).toBe(true);
+    expect(h.send).toHaveBeenLastCalledWith({ type: 'video:status', videoId: 'v1' });
+    expect(h.states()).toHaveLength(shown);
+  });
+
+  it('builds the video again when the server no longer has it', async () => {
+    const gone = { success: false, data: null, error: 'Not found' };
+    const replies = [created('v1', 'ready'), gone, created('v1', 'queued')];
+    const h = harness(async () => replies.shift());
+    const session = createListingSession(h.deps);
+    session.start(listing('1'));
+    await flush();
+
+    expect(await session.stillReady('v1')).toBe(false);
+    await flush();
+
+    // Building, not "updating": there is no old video left to keep playing.
+    expect(h.states().at(-1)).toEqual({ kind: 'generating', stage: expect.any(String) });
+    expect(h.send).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'video:create' }));
+  });
+
+  it('takes a busy server as no reason to rebuild', async () => {
+    const busy = { success: false, data: null, error: 'Too many requests' };
+    const replies = [created('v1', 'ready'), busy];
+    const h = harness(async () => replies.shift());
+    const session = createListingSession(h.deps);
+    session.start(listing('1'));
+    await flush();
+
+    expect(await session.stillReady('v1')).toBe(true);
+  });
+
   it('shows offline and stops polling when the server is unreachable', async () => {
     const replies = [created('v1'), UNREACHABLE];
     const h = harness(async () => replies.shift());

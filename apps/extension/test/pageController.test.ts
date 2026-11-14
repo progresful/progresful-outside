@@ -16,7 +16,7 @@ const listingA: ListingContext = {
 
 interface Harness {
   deps: PageDeps;
-  session: { start: ReturnType<typeof vi.fn>; restart: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn> };
+  session: { start: ReturnType<typeof vi.fn>; restart: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>; stillReady: ReturnType<typeof vi.fn<(videoId: string) => Promise<boolean>>> };
   badge: { render: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> };
   extract: ReturnType<typeof vi.fn>;
   openPlayer: ReturnType<typeof vi.fn<PageDeps['openPlayer']>>;
@@ -26,12 +26,13 @@ interface Harness {
 }
 
 function harness(settings: Settings = DEFAULT_SETTINGS): Harness {
-  const session = { start: vi.fn(), restart: vi.fn(), stop: vi.fn() };
+  const session = { start: vi.fn(), restart: vi.fn(), stop: vi.fn(), stillReady: vi.fn<(videoId: string) => Promise<boolean>>(async () => true) };
   const badge = { render: vi.fn(), remove: vi.fn() };
   const extract = vi.fn((_doc: Document, url: string): ListingContext | null => ({ ...listingA, url, listingId: url.split('/').pop() ?? '' }));
   const adapter: SiteAdapter = {
     site: 'airbnb',
     matchListing: (url) => (/\/rooms\/\d+/.test(url) ? { listingId: url.split('/').pop() ?? '' } : null),
+    visitKey: (url) => (/\/rooms\/\d+/.test(url) ? url : null),
     extractListing: extract,
     findGallery: () => null,
   };
@@ -109,6 +110,39 @@ describe('page controller with the real Airbnb adapter', () => {
     expect(h.session.start).toHaveBeenLastCalledWith(
       expect.objectContaining({ listingId: '222', title: 'Flat B', locationText: 'Porto, Portugal' }),
     );
+  });
+
+  it('keeps the badge when the address changes but the listing and dates do not', async () => {
+    const h = harness();
+    h.deps = { ...h.deps, adapterFor: realAdapterFor };
+    const controller = createPageController(h.deps);
+    describeListing('111', 'Flat A', 'Lisbon');
+    controller.onUrl('https://www.airbnb.com/rooms/111?check_in=2026-12-12&check_out=2026-12-16');
+    await flush();
+
+    // Opening the photo tour or a share dialog rewrites the address.
+    controller.onUrl('https://www.airbnb.com/rooms/111?check_in=2026-12-12&check_out=2026-12-16&modal=PHOTO_TOUR_SCROLLABLE');
+    controller.onUrl('https://www.airbnb.com/rooms/111?source_impression_id=p3_1&check_out=2026-12-16&check_in=2026-12-12');
+    await flush();
+
+    expect(h.session.start).toHaveBeenCalledTimes(1);
+    expect(h.session.stop).not.toHaveBeenCalled();
+    expect(h.badge.remove).not.toHaveBeenCalled();
+  });
+
+  it('starts over when the dates in the address change', async () => {
+    const h = harness();
+    h.deps = { ...h.deps, adapterFor: realAdapterFor };
+    const controller = createPageController(h.deps);
+    describeListing('111', 'Flat A', 'Lisbon');
+    controller.onUrl('https://www.airbnb.com/rooms/111?check_in=2026-12-12&check_out=2026-12-16');
+    await flush();
+
+    controller.onUrl('https://www.airbnb.com/rooms/111?check_in=2027-01-15&check_out=2027-01-20');
+    await flush();
+
+    expect(h.session.start).toHaveBeenCalledTimes(2);
+    expect(h.session.start).toHaveBeenLastCalledWith(expect.objectContaining({ checkIn: '2027-01-15', checkOut: '2027-01-20' }));
   });
 });
 
@@ -248,12 +282,47 @@ describe('page controller', () => {
     const badgeHandlers = h.mount.mock.calls[0]?.[1] as { onPlay(videoId: string): void; onRetry(): void };
 
     badgeHandlers.onPlay('v1');
+    await flush();
     h.pushState({ kind: 'ready', videoId: 'v2' });
     controller.playCurrent();
+    await flush();
     badgeHandlers.onRetry();
 
     expect(h.openPlayer.mock.calls).toEqual([['v1'], ['v2']]);
     expect(h.session.restart).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not open a video the server no longer has', async () => {
+    const h = harness();
+    h.session.stillReady.mockResolvedValue(false);
+    const controller = createPageController(h.deps);
+    controller.onUrl('https://www.airbnb.com/rooms/1');
+    await flush();
+    const badgeHandlers = h.mount.mock.calls[0]?.[1] as { onPlay(videoId: string): void };
+
+    badgeHandlers.onPlay('v1');
+    h.pushState({ kind: 'ready', videoId: 'v1' });
+    controller.playCurrent();
+    await flush();
+
+    expect(h.session.stillReady).toHaveBeenCalledWith('v1');
+    expect(h.openPlayer).not.toHaveBeenCalled();
+  });
+
+  it('does not open the player for a listing the user has already left', async () => {
+    const h = harness();
+    let answer: (ready: boolean) => void = () => {};
+    h.session.stillReady.mockReturnValue(new Promise<boolean>((resolve) => (answer = resolve)));
+    const controller = createPageController(h.deps);
+    controller.onUrl('https://www.airbnb.com/rooms/1');
+    await flush();
+    (h.mount.mock.calls[0]?.[1] as { onPlay(videoId: string): void }).onPlay('v1');
+
+    controller.onUrl('https://www.airbnb.com/s/Lisbon/homes');
+    answer(true);
+    await flush();
+
+    expect(h.openPlayer).not.toHaveBeenCalled();
   });
 
   it('retry() rebuilds the current listing, and does nothing without one', async () => {

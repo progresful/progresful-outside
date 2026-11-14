@@ -22,6 +22,11 @@ export interface ListingSession {
   restart(): void;
   /** Stops polling. Replies that arrive afterwards are ignored. */
   stop(): void;
+  /**
+   * Whether the server still has this video. Videos expire after six hours, and a tab can stay
+   * open longer than that; when the video is gone, a new build starts and this resolves false.
+   */
+  stillReady(videoId: string): Promise<boolean>;
 }
 
 /** The server asked us to slow down. Nothing is wrong: wait a beat and ask again. */
@@ -137,6 +142,18 @@ export function createListingSession(deps: SessionDeps): ListingSession {
     stop(): void {
       cancel();
       current = null;
+    },
+    async stillReady(videoId: string): Promise<boolean> {
+      const mine = token;
+      const res = await ask<VideoStatusResponse>({ type: 'video:status', videoId });
+      if (isBusy(res) || (res.success && res.data.status === 'ready')) {
+        return true;
+      }
+      if (mine === token) {
+        state = { kind: 'hidden' }; // nothing is left to keep playing while the new one builds
+        run();
+      }
+      return false;
     },
   };
 }

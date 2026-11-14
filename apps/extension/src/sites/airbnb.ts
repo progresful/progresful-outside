@@ -81,6 +81,14 @@ export const airbnbAdapter: SiteAdapter = {
     return listingId ? { listingId } : null;
   },
 
+  visitKey(url: string): string | null {
+    const match = airbnbAdapter.matchListing(url);
+    const params = parse(url)?.searchParams;
+    return match && params
+      ? [match.listingId, isoDateParam(params, 'check_in') ?? '', isoDateParam(params, 'check_out') ?? ''].join('|')
+      : null;
+  },
+
   extractListing(doc: Document, url: string): ListingContext | null {
     const match = airbnbAdapter.matchListing(url);
     const parsed = parse(url);

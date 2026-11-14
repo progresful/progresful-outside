@@ -163,6 +163,27 @@ describe('on live page shapes', () => {
   });
 });
 
+describe('visitKey', () => {
+  it('is the listing and its dates, whatever else the address carries', () => {
+    const airbnb = adapterFor(airbnbUrl)!.adapter;
+    const key = airbnb.visitKey(airbnbUrl);
+
+    expect(key).toBe('12345|2026-12-12|2026-12-16');
+    expect(airbnb.visitKey(`${airbnbUrl}&modal=PHOTO_TOUR_SCROLLABLE`)).toBe(key);
+    expect(airbnb.visitKey('https://www.airbnb.com/rooms/12345')).toBe('12345||');
+    expect(airbnb.visitKey('https://www.airbnb.com/s/Lisbon/homes')).toBeNull();
+  });
+
+  it('reads Booking.com dates and ignores the page language', () => {
+    const booking = adapterFor(bookingUrl)!.adapter;
+
+    expect(booking.visitKey(bookingUrl)).toBe('pt/some-hotel|2026-12-12|2026-12-16');
+    expect(booking.visitKey('https://www.booking.com/hotel/pt/some-hotel.de.html?checkin=2026-12-12&checkout=2026-12-16&lang=de')).toBe(
+      'pt/some-hotel|2026-12-12|2026-12-16',
+    );
+  });
+});
+
 describe('a document that is not the listing in the address bar', () => {
   // After an in-tab navigation the address changes before the page does.
   it('is refused when the Airbnb page still names the previous listing', () => {

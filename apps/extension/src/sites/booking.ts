@@ -96,6 +96,14 @@ export const bookingAdapter: SiteAdapter = {
     return match ? { listingId: `${match[1]}/${match[2]}` } : null;
   },
 
+  visitKey(url: string): string | null {
+    const match = bookingAdapter.matchListing(url);
+    const params = parse(url)?.searchParams;
+    return match && params
+      ? [match.listingId, isoDateParam(params, 'checkin') ?? '', isoDateParam(params, 'checkout') ?? ''].join('|')
+      : null;
+  },
+
   extractListing(doc: Document, url: string): ListingContext | null {
     const match = bookingAdapter.matchListing(url);
     const parsed = parse(url);
