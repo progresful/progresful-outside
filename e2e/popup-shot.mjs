@@ -13,7 +13,8 @@ const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir()
   headless: false,
   ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
   viewport: { width: 360, height: 520 },
-  args: ['--headless=new', `--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
+  args: ['--headless=new', '--mute-audio', // the check reads the player's clock; nobody needs to hear it
+    `--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
 });
 try {
   const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker', { timeout: 15_000 }));

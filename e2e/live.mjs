@@ -31,9 +31,9 @@ const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir()
   locale: 'en-GB',
   args: [
     ...(headed ? [] : ['--headless=new']),
+    '--mute-audio', // the check reads the player's clock; nobody needs to hear it
     `--disable-extensions-except=${extension}`,
     `--load-extension=${extension}`,
-    '--autoplay-policy=no-user-gesture-required',
   ],
 });
 
@@ -71,6 +71,7 @@ try {
   const started = Date.now();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
 
+  const problems = [];
   let last = '';
   let ready = false;
   for (let tick = 0; tick < 150 && !ready; tick += 1) {
@@ -109,10 +110,17 @@ try {
   );
 
   if (ready) {
-    await page.evaluate(() => {
-      const root = document.querySelector('outside-badge')?.shadowRoot;
-      (root?.querySelector('button') ?? root?.querySelector('.badge-root')?.firstElementChild)?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    // A real click, as a person would make it: sound only plays after a genuine user gesture.
+    const box = await page.evaluate(() => {
+      const host = document.querySelector('outside-badge');
+      host?.scrollIntoView({ block: 'center' });
+      const rect = host?.shadowRoot?.querySelector('button')?.getBoundingClientRect();
+      return rect ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null;
     });
+    if (!box) {
+      throw new Error('The badge has no button to click');
+    }
+    await page.mouse.click(box.x, box.y);
     const frameHandle = await page.waitForSelector('iframe[src^="chrome-extension://"]', { timeout: 10_000 });
     const frame = await frameHandle.contentFrame();
     for (const second of [2, 7, 13, 18, 23]) {
@@ -123,10 +131,17 @@ try {
         return element ? { paused: element.paused, time: Number(element.currentTime.toFixed(1)), muted: element.muted } : null;
       }).catch(() => 'frame gone');
       log(`player at ~${second}s: audio ${JSON.stringify(audio)}`);
+      if (second === 7 && !(audio && typeof audio === 'object' && audio.paused === false && audio.time > 1)) {
+        problems.push('the voiceover was not playing seven seconds in');
+      }
     }
     await page.keyboard.press('Escape');
     await page.waitForTimeout(600);
-    log('overlay after Escape:', await page.locator('iframe[src^="chrome-extension://"]').count());
+    const overlays = await page.locator('iframe[src^="chrome-extension://"]').count();
+    log('overlay after Escape:', overlays);
+    if (overlays !== 0) {
+      problems.push('Escape did not close the player');
+    }
     await page.screenshot({ path: join(out, 'listing-after-close.png') });
   }
 
@@ -149,6 +164,18 @@ try {
       await page.waitForTimeout(300);
     }
     log(rebuilt ? 'rebuilt for the new interests' : 'no rebuild seen');
+    if (!rebuilt) {
+      problems.push('changing the interests did not rebuild the video');
+    }
+  }
+  if (!ready) {
+    problems.push(`the badge never became ready (last: ${last})`);
+  }
+  if (problems.length > 0) {
+    log('FAILED:', problems.join('; '));
+    process.exitCode = 1;
+  } else {
+    log('PASSED');
   }
 } finally {
   await context.close();
