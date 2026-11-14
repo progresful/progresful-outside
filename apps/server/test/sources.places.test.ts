@@ -130,6 +130,18 @@ describe('toPlaceFact', () => {
 describe('fetchPlaces', () => {
   const params = { interest: 'food' as const, query: 'local restaurants', locationText: 'Lisbon, Portugal', origin: lisbon };
 
+  it('remembers the order Maps returned the places in', async () => {
+    const second = { ...rawPlace, place_id: 'ChIJdef', name: 'Second' };
+    const scrape = vi.fn().mockResolvedValue(scrapeResponse([rawPlace, { name: 'broken' }, second]));
+
+    const result = await fetchPlaces(makeDeps({ client: stubClient({ scrape }) }), params);
+
+    expect(result.facts.map((fact) => [fact.name, fact.rank])).toEqual([
+      ['Mercado da Ribeira', 0],
+      ['Second', 2],
+    ]);
+  });
+
   it('searches Maps for the query it is given, whatever the interest usually searches', async () => {
     const scrape = vi.fn().mockResolvedValue(scrapeResponse([rawPlace]));
     const deps = makeDeps({ client: stubClient({ scrape }) });

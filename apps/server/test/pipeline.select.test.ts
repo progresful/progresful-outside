@@ -30,6 +30,20 @@ describe('scorePlace', () => {
   });
 });
 
+describe('scorePlace and the order Maps returned', () => {
+  it('prefers what Maps listed first for the search over a similar place far down its list', () => {
+    const first = place('ski-jump', 'nature', { rating: 4.6, reviewCount: 8_000, distanceM: 2_500, rank: 0 });
+    const tenth = place('palace-gardens', 'nature', { rating: 4.6, reviewCount: 7_000, distanceM: 800, rank: 10 });
+
+    expect(scorePlace(first)).toBeGreaterThan(scorePlace(tenth));
+    expect(names(selectPlaces([tenth, first, place('a', 'food'), place('b', 'culture')], ['nature', 'food', 'culture']))[0]).toBe('ski-jump');
+  });
+
+  it('scores a place with no known position as if it were listed first', () => {
+    expect(scorePlace(place('a', 'food'))).toBe(scorePlace(place('a', 'food', { rank: 0 })));
+  });
+});
+
 describe('selectPlaces', () => {
   it('needs three places for a video', () => {
     expect(MIN_PLACES).toBe(3);

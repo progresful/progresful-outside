@@ -18,8 +18,16 @@ const DRIVE_M_PER_MIN = 500;
 const DETOUR_NUMERATOR = 13;
 const DETOUR_DENOMINATOR = 10;
 
+/** How fast a place loses weight as it sits further down Maps' own list for the search. */
+const RANK_WEIGHT = 0.15;
+
+/**
+ * Quality, closeness and how well the place answers the search. The last matters most for
+ * seasonal searches: "winter activities" lists the ski jump first and the palace gardens tenth.
+ */
 export function scorePlace(place: PlaceFact): number {
-  return (place.rating * Math.log10(place.reviewCount + 1)) / (1 + place.distanceM / 1000);
+  const quality = (place.rating * Math.log10(place.reviewCount + 1)) / (1 + place.distanceM / 1000);
+  return quality / (1 + (place.rank ?? 0) * RANK_WEIGHT);
 }
 
 function byScoreDescending(a: PlaceFact, b: PlaceFact): number {

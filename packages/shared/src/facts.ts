@@ -43,6 +43,8 @@ export interface PlaceFact {
   lng: number;
   imageUrl: string;
   distanceM: number;
+  /** Position in the source's own result list for the search, 0 first: how well it answers the search. */
+  rank?: number;
   hours?: OpeningHours;
   timezone?: string;
   sourceId: string;

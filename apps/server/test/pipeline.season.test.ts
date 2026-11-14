@@ -65,6 +65,17 @@ describe('placeQuery', () => {
     expect(placeQuery('food', snowy)).toEqual({ query: 'cosy restaurant', fallback: 'local restaurants' });
   });
 
+  it('searches for winter things in a cold stay even where little snow falls in town', () => {
+    // Innsbruck in January: highs of 6 °C and a dry valley, with ski areas all around it.
+    const cold = seasonOf(climate({ tempMinC: -6, tempMaxC: 6, snowDaysPercent: 8, conditions: 'mostly dry' }), january, 47);
+
+    expect(cold.kind).toBe('cold');
+    expect(placeQuery('nature', cold)).toEqual({ query: 'winter activities', fallback: 'park' });
+    expect(placeQuery('adventure', cold)).toEqual({ query: 'ski resort', fallback: 'outdoor activities' });
+    expect(seasonalWords(cold)).toEqual(expect.arrayContaining(['ski', 'snowshoe', 'thermal']));
+    expect(seasonPhotoQuery('Innsbruck', cold)).toBe('Innsbruck winter');
+  });
+
   it('uses the usual search when the season changes nothing', () => {
     expect(placeQuery('nature', mild)).toEqual({ query: 'park' });
     expect(placeQuery('culture', snowy)).toEqual({ query: 'museum' });

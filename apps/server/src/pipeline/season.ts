@@ -71,8 +71,10 @@ export function seasonOf(climate: ClimateFact | undefined, window: TripWindow, l
 
 /** What to search Maps for instead of an interest's usual query, where the season calls for it. */
 const SEASONAL_QUERIES: Readonly<Partial<Record<InterestId, Partial<Record<SeasonKind, string>>>>> = {
-  nature: { snowy: 'winter activities' },
-  adventure: { snowy: 'ski resort' },
+  // Cold counts as winter even where little snow falls in town: the slopes are usually up the hill,
+  // and where there are none the search finds nothing nearby and the usual one runs instead.
+  nature: { snowy: 'winter activities', cold: 'winter activities' },
+  adventure: { snowy: 'ski resort', cold: 'ski resort' },
   water: { snowy: 'thermal bath', cold: 'thermal bath' },
   food: { snowy: 'cosy restaurant', cold: 'cosy restaurant', warm: 'restaurant with terrace', hot: 'restaurant with terrace' },
   nightlife: { warm: 'rooftop bar', hot: 'rooftop bar' },
@@ -106,7 +108,7 @@ const FESTIVE_WORDS = ['christmas', 'advent'];
 export function seasonalWords(season: Season): string[] {
   const byKind: Readonly<Record<SeasonKind, readonly string[]>> = {
     snowy: [...SNOW_WORDS, ...COLD_WORDS],
-    cold: COLD_WORDS,
+    cold: [...SNOW_WORDS, ...COLD_WORDS],
     mild: [],
     warm: SUN_WORDS,
     hot: SUN_WORDS,

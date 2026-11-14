@@ -73,7 +73,7 @@ function timezoneAt(point: LatLng): string | undefined {
 }
 
 /** Null when the record lacks a name, rating, coordinates or image: such a place cannot fill a scene. */
-export function toPlaceFact(raw: unknown, interest: InterestId, origin: LatLng, sourceId: string): PlaceFact | null {
+export function toPlaceFact(raw: unknown, interest: InterestId, origin: LatLng, sourceId: string, rank?: number): PlaceFact | null {
   const parsed = RawPlaceSchema.safeParse(raw);
   if (!parsed.success) {
     return null;
@@ -96,6 +96,7 @@ export function toPlaceFact(raw: unknown, interest: InterestId, origin: LatLng, 
     lng: point.lng,
     imageUrl: videoSized(place.google_image),
     distanceM: Math.round(haversineM(origin, point)),
+    ...(rank === undefined ? {} : { rank }),
     timezone: timezoneAt(point),
     ...(hours ? { hours } : {}),
     sourceId,
@@ -124,7 +125,7 @@ async function scrapePlaces(
     return emptyResult();
   }
   const facts = results.data.results
-    .map((raw) => toPlaceFact(raw, p.interest, p.origin, sourceId))
+    .map((raw, rank) => toPlaceFact(raw, p.interest, p.origin, sourceId, rank))
     .filter((fact): fact is PlaceFact => fact !== null);
   const fetchedAt = realFetchedAt(res, deps.now());
   const source: Source = { id: sourceId, label: 'Google Maps', url, fetchedAt: new Date(fetchedAt).toISOString() };
