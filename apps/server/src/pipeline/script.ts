@@ -71,6 +71,7 @@ function describeFact(fact: Fact): Record<string, unknown> {
       return {
         name: fact.name,
         ...(fact.category ? { what: fact.category } : {}),
+        ...(fact.description ? { about: fact.description } : {}),
         rating: fact.rating,
         reviews: fact.reviewCount,
         travel: spokenTravel(fact.distanceM),
@@ -90,20 +91,26 @@ function wordsPerLine(sceneCount: number, wordBudget: number): number {
   return Math.min(MAX_WORDS_PER_LINE, Math.max(MIN_WORDS_PER_LINE, share));
 }
 
+/** "Lisbon, Portugal", or just "Lisbon" when the listing gave no separate country. */
+function whereabouts(place: NormalizedPlace): string {
+  return place.country && place.country !== place.city ? `${place.city}, ${place.country}` : place.city;
+}
+
 function systemPrompt(sceneCount: number, place: NormalizedPlace, wordBudget: number): string {
   return [
-    `You write the voiceover for a short, upbeat travel video about what is around a holiday rental in ${place.city}, ${place.country}.`,
+    `You write the voiceover for a short, upbeat travel video about what is around a holiday rental in ${whereabouts(place)}.`,
     `Return exactly ${sceneCount} lines, one per scene, in scene order.`,
     'How to write:',
     '- Sound like a friend who knows the area: warm, concrete, a little excited. Plain spoken English.',
     '- Activity scenes: say what the place is and how close it is; the rating may back it up. Start each one differently.',
-    '- Experiences scene: name one or two of the offers with their prices.',
+    '- Experiences scene: one or two of the offers, each in a few plain words with its price, like "a Sintra day trip from €59".',
     '- Stay scene: what is on, or what weather to expect, while the guest is there.',
     '- The first line hooks and the last line invites. They have no facts, so no numbers in them.',
     'Hard rules:',
     '- Use only the facts listed for that scene. Never invent a name, number, price or time.',
     '- Describe a place only by the facts given; do not invent details about it.',
-    '- Write numbers as digits and copy them exactly as given. Keep names exactly as given.',
+    '- Write numbers as digits and copy them exactly as given.',
+    '- Keep the names of places, venues and performers exactly as given. A long tour title may be cut down to its subject.',
     '- Never say "open now", "right now", "today", "tonight" or "this evening".',
     '- No hashtags, no emoji, no symbols.',
     `- At most ${wordsPerLine(sceneCount, wordBudget)} words per line, about ${wordBudget} words in total. Shorter is better.`,

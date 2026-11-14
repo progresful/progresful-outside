@@ -21,7 +21,8 @@ const RawPlaceSchema = z.object({
   longitude: NumericSchema,
   google_image: z.url(),
   google_hours: z.unknown().optional(),
-  google_category: z.string().nullish(),
+  google_category: z.unknown().optional(),
+  google_description: z.unknown().optional(),
 });
 
 export const MapsResultsSchema = z.object({ results: z.array(z.unknown()) });
@@ -45,6 +46,21 @@ export function placesUrl(query: string, locationText: string): string {
   return mapsSearchRequest(`${query} near ${locationText}`).url;
 }
 
+/** Maps gives categories as a list and descriptions as text or nothing; anything else is ignored. */
+function firstText(raw: unknown): string | undefined {
+  const first: unknown = Array.isArray(raw) ? raw[0] : raw;
+  const text = typeof first === 'string' ? first.trim() : '';
+  return text.length > 0 ? text : undefined;
+}
+
+const GOOGLE_PHOTO = /^(https:\/\/[a-z0-9]+\.googleusercontent\.com\/.+=)w\d+-h\d+(-[a-z-]+)?$/;
+const VIDEO_PHOTO_SIZE = 'w1280-h720';
+
+/** Maps hands out thumbnails; the same photo is served at any size named at the end of its address. */
+function videoSized(imageUrl: string): string {
+  return imageUrl.replace(GOOGLE_PHOTO, (_all, base: string, flags: string | undefined) => `${base}${VIDEO_PHOTO_SIZE}${flags ?? ''}`);
+}
+
 function timezoneAt(point: LatLng): string | undefined {
   try {
     return tzlookup(point.lat, point.lng);
@@ -63,18 +79,20 @@ export function toPlaceFact(raw: unknown, interest: InterestId, origin: LatLng, 
   const place = parsed.data;
   const point = { lat: place.latitude, lng: place.longitude };
   const hours = parseGoogleHours(place.google_hours);
-  const category = place.google_category?.trim();
+  const category = firstText(place.google_category);
+  const description = firstText(place.google_description);
   return {
     id: `place:${place.place_id}`,
     kind: 'place',
     interest,
     name: place.name,
     ...(category ? { category } : {}),
+    ...(description ? { description } : {}),
     rating: place.rating,
     reviewCount: place.number_of_reviews,
     lat: point.lat,
     lng: point.lng,
-    imageUrl: place.google_image,
+    imageUrl: videoSized(place.google_image),
     distanceM: Math.round(haversineM(origin, point)),
     timezone: timezoneAt(point),
     ...(hours ? { hours } : {}),

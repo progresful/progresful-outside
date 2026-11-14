@@ -35,6 +35,8 @@ export interface PlaceFact {
   name: string;
   /** What kind of place it is, as the source names it: "Food court". */
   category?: string;
+  /** The source's own one-line description of the place. */
+  description?: string;
   rating: number;
   reviewCount: number;
   lat: number;

@@ -133,12 +133,19 @@ describe('writeLines', () => {
   it('tells the model what each place is and where the event is', async () => {
     const complete = vi.fn().mockResolvedValue({ lines: goodLines });
     const concert = { ...christmasMarket, title: 'Bryan Adams', dateText: '20 November', venue: 'MEO Arena, Lisbon, Portugal' };
-    const rich = selection({ places: [{ ...market, category: 'Food court' }, museum, park], events: [concert] });
+    const described = { ...market, category: 'Food court', description: 'Riverside hall from 1882 with gourmet stalls.' };
+    const rich = selection({ places: [described, museum, park], events: [concert] });
 
     await writeLines(complete, planScenes(rich), factMap(rich), rich.place, 65);
 
     const [system, user] = complete.mock.calls[0] as [string, string];
     expect(user).toContain('"what": "Food court"');
+    expect(user).toContain('"about": "Riverside hall from 1882 with gourmet stalls."');
+    const lines = goodLines.map((line, index) => {
+      if (index === 1) return 'Mercado da Ribeira, a riverside hall from 1882, is about 13 minutes on foot.';
+      return index === 5 ? 'Bryan Adams plays MEO Arena on 20 November.' : line;
+    });
+    expect(validateLines(lines, planScenes(rich), factMap(rich), 65)).toEqual({ ok: true });
     expect(user).toContain('"where": "MEO Arena"');
     expect(user).not.toContain('MEO Arena, Lisbon');
     expect(system).toContain('do not invent details');
@@ -150,6 +157,16 @@ describe('writeLines', () => {
     const lines = withLine(5, 'Disco night is on at Studio 54 on 20 November.');
 
     expect(validateLines(lines, planScenes(s), factMap(s), 65)).toEqual({ ok: true });
+  });
+
+  it('names the city once when the listing gives no separate country', async () => {
+    const complete = vi.fn().mockResolvedValue({ lines: goodLines });
+
+    await writeLines(complete, plan, facts, { ...sel.place, country: 'Lisbon' }, 65);
+    expect((complete.mock.calls[0] as [string])[0]).toContain('holiday rental in Lisbon.');
+
+    await writeLines(complete, plan, facts, sel.place, 65);
+    expect((complete.mock.calls[1] as [string])[0]).toContain('holiday rental in Lisbon, Portugal.');
   });
 
   it('caps each line so 7 scenes fit the budget', async () => {

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { CreditsExhaustedError } from '../src/contextdev/client';
 import { fetchPlaces, haversineM, placesUrl, toPlaceFact } from '../src/sources/places';
@@ -68,8 +69,43 @@ describe('toPlaceFact', () => {
     expect(fact?.distanceM).toBeLessThan(2_000);
   });
 
+  it('maps every usable place of the recorded Maps response', () => {
+    const fixture = JSON.parse(readFileSync(new URL('./fixtures/contextdev/places-food.json', import.meta.url), 'utf8')) as {
+      parsed: { data: { results: unknown[] } };
+    };
+    const facts = fixture.parsed.data.results.flatMap((raw) => toPlaceFact(raw, 'food', lisbon, 's') ?? []);
+
+    expect(facts).toHaveLength(20);
+    expect(facts[0]).toMatchObject({ name: 'Time Out Market', category: 'Food court', rating: 4.4, reviewCount: 77120 });
+    expect(facts.every((fact) => fact.hours !== undefined && fact.timezone === 'Europe/Lisbon')).toBe(true);
+  });
+
+  it('asks Google for the photo at video size instead of the thumbnail', () => {
+    const thumb = 'https://lh3.googleusercontent.com/grass-cs/AABkmLe1Z10=w433-h240-k-no';
+
+    expect(toPlaceFact({ ...rawPlace, google_image: thumb }, 'food', lisbon, 's')?.imageUrl).toBe(
+      'https://lh3.googleusercontent.com/grass-cs/AABkmLe1Z10=w1280-h720-k-no',
+    );
+    expect(toPlaceFact({ ...rawPlace, google_image: 'https://lh3.googleusercontent.com/p/abc=s1600' }, 'food', lisbon, 's')?.imageUrl).toBe(
+      'https://lh3.googleusercontent.com/p/abc=s1600',
+    );
+    expect(toPlaceFact({ ...rawPlace, google_image: 'https://example.com/a=w100-h100' }, 'food', lisbon, 's')?.imageUrl).toBe(
+      'https://example.com/a=w100-h100',
+    );
+  });
+
   it('carries what kind of place it is, when Maps says', () => {
     expect(toPlaceFact(rawPlace, 'food', lisbon, 's')?.category).toBe('Food court');
+    expect(toPlaceFact({ ...rawPlace, google_category: ['Market', 'Tourist attraction'] }, 'food', lisbon, 's')?.category).toBe('Market');
+    expect(toPlaceFact({ ...rawPlace, google_category: [] }, 'food', lisbon, 's')).not.toHaveProperty('category');
+    expect(toPlaceFact({ ...rawPlace, google_category: { odd: true } }, 'food', lisbon, 's')).not.toBeNull();
+  });
+
+  it('carries the short description Maps gives, when there is one', () => {
+    const described = { ...rawPlace, google_description: ' Trendy flea market open Sundays. ' };
+
+    expect(toPlaceFact(described, 'food', lisbon, 's')?.description).toBe('Trendy flea market open Sundays.');
+    expect(toPlaceFact({ ...rawPlace, google_description: null }, 'food', lisbon, 's')).not.toHaveProperty('description');
     expect(toPlaceFact({ ...rawPlace, google_category: '  ' }, 'food', lisbon, 's')).not.toHaveProperty('category');
     expect(toPlaceFact({ ...rawPlace, google_category: null }, 'food', lisbon, 's')).not.toHaveProperty('category');
   });

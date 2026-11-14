@@ -52,9 +52,16 @@ function firstExperienceImage(sel: Selection): string | undefined {
   return planned.map((id) => byId.get(id)?.imageUrl).find((url) => url !== undefined);
 }
 
+/** The hook, the stay and the outro each show a listing photo: a different one where the listing has several. */
+const LISTING_PHOTOS_SHOWN = 3;
+
 /** The original URLs of every image a video for this selection can show, without duplicates. */
 export function sceneImageUrls(listing: ListingContext, sel: Selection): string[] {
-  const candidates = [listing.photos[0], ...sel.places.map((place) => place.imageUrl), firstExperienceImage(sel)];
+  const candidates = [
+    ...listing.photos.slice(0, LISTING_PHOTOS_SHOWN),
+    ...sel.places.map((place) => place.imageUrl),
+    firstExperienceImage(sel),
+  ];
   return [...new Set(candidates.filter((url): url is string => url !== undefined))];
 }
 
@@ -72,6 +79,8 @@ function sceneContent(scene: StoryScene, input: AssembleInput, facts: ReadonlyMa
   const { sel, listing, images } = input;
   const mirrored = (url: string | undefined): string | undefined => (url ? images.get(url) : undefined);
   const listingPhoto = mirrored(listing.photos[0]);
+  const stayPhoto = mirrored(listing.photos[1]) ?? listingPhoto;
+  const outroPhoto = mirrored(listing.photos[2]) ?? stayPhoto;
   const sceneFacts = scene.factIds.flatMap((id) => facts.get(id) ?? []);
   const first = sceneFacts[0];
 
@@ -107,13 +116,13 @@ function sceneContent(scene: StoryScene, input: AssembleInput, facts: ReadonlyMa
       return {
         title: sel.window.fromListing ? 'During your stay' : 'In the next two weeks',
         subtitle: stayText(first),
-        imageUrl: listingPhoto,
+        imageUrl: stayPhoto,
       };
     case 'outro':
       return {
         title: "What's outside",
         items: [...new Set(input.sources.map((source) => source.label))].map((label) => ({ title: label, detail: '' })),
-        imageUrl: listingPhoto,
+        imageUrl: outroPhoto,
       };
   }
 }

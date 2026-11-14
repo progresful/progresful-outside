@@ -136,6 +136,25 @@ describe('assembleManifest', () => {
     expect(scenes.find((scene) => scene.type === 'stay')?.title).toBe('In the next two weeks');
   });
 
+  it('gives the stay and outro scenes their own listing photo when the listing has several', () => {
+    const three = { ...listing, photos: ['hero', 'second', 'third'].map((name) => `https://a0.muscache.com/im/${name}.jpg`) };
+    const made = assembleManifest(input(selection(), { listing: three, images: mirrored(sceneImageUrls(three, selection())) }));
+    const imageOf = (type: string): string | undefined => made.scenes.find((scene) => scene.type === type)?.imageUrl;
+
+    expect([imageOf('hook'), imageOf('stay'), imageOf('outro')]).toEqual(['/media/hero.jpg', '/media/second.jpg', '/media/third.jpg']);
+  });
+
+  it('reuses the first listing photo when there is only one', () => {
+    const one = { ...listing, photos: ['https://a0.muscache.com/im/hero.jpg'] };
+    const made = assembleManifest(input(selection(), { listing: one, images: mirrored(sceneImageUrls(one, selection())) }));
+
+    expect(made.scenes.filter((scene) => ['hook', 'stay', 'outro'].includes(scene.type)).map((scene) => scene.imageUrl)).toEqual([
+      '/media/hero.jpg',
+      '/media/hero.jpg',
+      '/media/hero.jpg',
+    ]);
+  });
+
   it('falls back to the listing photo when a place image did not mirror', () => {
     const images = mirrored(sceneImageUrls(listing, selection()).filter((url) => url !== market.imageUrl));
     const activity = assembleManifest(input(selection(), { images })).scenes.find((scene) => scene.type === 'activity');
@@ -170,11 +189,12 @@ describe('assembleManifest', () => {
 });
 
 describe('sceneImageUrls', () => {
-  it('lists the listing photo, each place image and the first experience image, once each', () => {
+  it('lists up to three listing photos, each place image and the first experience image, once each', () => {
     const sel = selection({ experiences: [tour], events: [christmasMarket] });
 
     expect(sceneImageUrls(listing, sel)).toEqual([
       'https://a0.muscache.com/im/hero.jpg',
+      'https://a0.muscache.com/im/second.jpg',
       market.imageUrl,
       museum.imageUrl,
       park.imageUrl,

@@ -33,7 +33,13 @@ function numbersIn(text: string | undefined): number[] {
 function allowedNumbers(fact: Fact): number[] {
   switch (fact.kind) {
     case 'place':
-      return [fact.rating, fact.reviewCount, ...numbersIn(travelLabel(fact.distanceM)), ...numbersIn(fact.name)];
+      return [
+        fact.rating,
+        fact.reviewCount,
+        ...numbersIn(travelLabel(fact.distanceM)),
+        ...numbersIn(fact.name),
+        ...numbersIn(fact.description),
+      ];
     case 'experience':
       return [fact.amount, ...(fact.rating === undefined ? [] : [fact.rating]), ...numbersIn(fact.title), ...numbersIn(fact.durationText)];
     case 'event':
