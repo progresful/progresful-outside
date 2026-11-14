@@ -111,6 +111,7 @@ export function selection(overrides: Partial<Selection> = {}): Selection {
     events: [christmasMarket],
     weather: [weather],
     climate: [],
+    seasonPhotos: [],
     ...overrides,
   };
 }

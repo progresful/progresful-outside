@@ -1,6 +1,6 @@
 import type { ClimateFact } from '@outside/shared';
 import { describe, expect, it } from 'vitest';
-import { placeQuery, seasonOf, seasonPhotoQuery, seasonalWords } from '../src/pipeline/season';
+import { placePhotoQuery, placeQuery, seasonOf, seasonPhotoQuery, seasonalWords, wantsSeasonalPhoto } from '../src/pipeline/season';
 
 const january = { start: '2027-01-15', end: '2027-01-20', fromListing: true };
 const july = { start: '2027-07-10', end: '2027-07-17', fromListing: true };
@@ -38,9 +38,14 @@ describe('seasonOf', () => {
     expect(seasonOf(climate({ month: 'July', tempMaxC: 27, snowDaysPercent: 0 }), july, 47).name).toBe('summer');
   });
 
-  it('assumes nothing about the weather when the usual weather is not known', () => {
-    // January is beach weather in Tenerife: without data, no seasonal search is safer than a wrong one.
-    expect(seasonOf(undefined, january, 47)).toMatchObject({ kind: 'mild', name: 'winter', month: 'January' });
+  it('guesses a cold winter far from the equator when the usual weather is not known', () => {
+    expect(seasonOf(undefined, january, 47)).toMatchObject({ kind: 'cold', name: 'winter', month: 'January' });
+    expect(seasonOf(undefined, july, -45)).toMatchObject({ kind: 'cold', name: 'winter' });
+  });
+
+  it('assumes nothing else about weather it does not know', () => {
+    // January is beach weather in Tenerife, and a summer may be anything.
+    expect(seasonOf(undefined, january, 28)).toMatchObject({ kind: 'mild', name: 'winter' });
     expect(seasonOf(undefined, july, 47)).toMatchObject({ kind: 'mild', name: 'summer', month: 'July' });
     expect(seasonOf(undefined, january, -33.9)).toMatchObject({ kind: 'mild', name: 'summer' });
   });
@@ -99,6 +104,29 @@ describe('seasonPhotoQuery', () => {
     expect(seasonPhotoQuery('Innsbruck', seasonOf(climate(), january, 47))).toBe('Innsbruck winter snow');
     expect(seasonPhotoQuery('Lisbon', seasonOf(climate({ tempMaxC: 15, snowDaysPercent: 0 }), january, 38))).toBe('Lisbon winter');
     expect(seasonPhotoQuery('Lisbon', seasonOf(climate({ month: 'July', tempMaxC: 29, snowDaysPercent: 0 }), july, 38))).toBe('Lisbon summer');
+  });
+});
+
+describe('placePhotoQuery and wantsSeasonalPhoto', () => {
+  const cold = seasonOf(climate({ tempMinC: -6, tempMaxC: 6, snowDaysPercent: 8 }), january, 47);
+  const mild = seasonOf(climate({ tempMaxC: 15, snowDaysPercent: 0 }), january, 38);
+  const hot = seasonOf(climate({ month: 'July', tempMaxC: 31, snowDaysPercent: 0 }), july, 38);
+
+  it('asks for the place, its city and the season, with snow in a cold winter', () => {
+    expect(placePhotoQuery('Innsbrucker Hofgarten', 'Innsbruck', cold)).toBe('Innsbrucker Hofgarten Innsbruck winter snow');
+    expect(placePhotoQuery('Praia da Rocha', 'Portimão', hot)).toBe('Praia da Rocha Portimão summer');
+  });
+
+  it('wants a seasonal photo for outdoor places when the season is not a mild one', () => {
+    expect(wantsSeasonalPhoto('nature', cold)).toBe(true);
+    expect(wantsSeasonalPhoto('adventure', hot)).toBe(true);
+    expect(wantsSeasonalPhoto('history', cold)).toBe(true);
+  });
+
+  it('keeps the usual photo indoors and in mild weather', () => {
+    expect(wantsSeasonalPhoto('food', cold)).toBe(false);
+    expect(wantsSeasonalPhoto('culture', cold)).toBe(false);
+    expect(wantsSeasonalPhoto('nature', mild)).toBe(false);
   });
 });
 

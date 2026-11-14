@@ -47,6 +47,18 @@ function kindFromClimate(climate: ClimateFact): SeasonKind {
   return climate.tempMaxC < WARM_BELOW_C ? 'warm' : 'hot';
 }
 
+/** Winters this far from the equator are cold enough to call cold without having measured them. */
+const COLD_WINTER_LATITUDE = 40;
+
+/**
+ * For when the usual weather could not be fetched. Only one guess is safe enough to make: a
+ * winter far from the equator is cold. January is beach weather in Tenerife, and a summer may be
+ * anything, so everything else counts as mild and changes nothing.
+ */
+function kindFromCalendar(name: SeasonName, lat: number): SeasonKind {
+  return name === 'winter' && Math.abs(lat) >= COLD_WINTER_LATITUDE ? 'cold' : 'mild';
+}
+
 /** Whether any day of the stay falls between 20 November and 26 December. */
 function isFestive(window: TripWindow): boolean {
   const startsBeforeEnd = window.start.slice(5) <= FESTIVE_TO;
@@ -61,8 +73,7 @@ export function seasonOf(climate: ClimateFact | undefined, window: TripWindow, l
   const northern = NORTHERN[monthIndex] ?? 'summer';
   const name = lat < 0 ? OPPOSITE[northern] : northern;
   return {
-    // Without data the weather is not guessed: January is beach weather in Tenerife.
-    kind: climate ? kindFromClimate(climate) : 'mild',
+    kind: climate ? kindFromClimate(climate) : kindFromCalendar(name, lat),
     name,
     month: MONTHS[monthIndex] ?? '',
     festive: isFestive(window),
@@ -92,6 +103,23 @@ export function placeQuery(interest: InterestId, season: Season): PlaceQuery {
   const usual = interestById(interest).mapsQueries[0] ?? interest;
   const seasonal = (season.festive ? FESTIVE_QUERIES[interest] : undefined) ?? SEASONAL_QUERIES[interest]?.[season.kind];
   return seasonal && seasonal !== usual ? { query: seasonal, fallback: usual } : { query: usual };
+}
+
+/** Interests whose places are out of doors, where the season shows in a photo. */
+const OUTDOOR_INTERESTS: ReadonlySet<InterestId> = new Set(['nature', 'adventure', 'water', 'history', 'family', 'shopping', 'events', 'gems']);
+
+/** Whether a place's stock photo should be swapped for one taken in the season of the stay. */
+export function wantsSeasonalPhoto(interest: InterestId, season: Season): boolean {
+  return season.kind !== 'mild' && OUTDOOR_INTERESTS.has(interest);
+}
+
+function wintry(season: Season): boolean {
+  return season.name === 'winter' && (season.kind === 'snowy' || season.kind === 'cold');
+}
+
+/** The image search for one place in the season of the stay: "Innsbrucker Hofgarten Innsbruck winter snow". */
+export function placePhotoQuery(placeName: string, city: string, season: Season): string {
+  return `${placeName} ${city} ${season.name}${wintry(season) ? ' snow' : ''}`;
 }
 
 /** The search for a photo of the place as it looks at that time of year. */

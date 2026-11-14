@@ -120,8 +120,8 @@ describe('assembleManifest', () => {
   });
 
   it('opens on the photo of the place in season when there is one', () => {
-    const photo = { id: 'photo:season' as const, imageUrl: 'https://upload.wikimedia.org/thumb/innsbruck-winter.jpg', sourceId: 'wikimedia-commons' };
-    const sel = selection({ seasonPhoto: photo });
+    const photo = { id: 'photo:season:0', imageUrl: 'https://upload.wikimedia.org/thumb/innsbruck-winter.jpg', sourceId: 'wikimedia-commons' };
+    const sel = selection({ seasonPhotos: [photo] });
     const made = assembleManifest(input(sel, { images: mirrored(sceneImageUrls(listing, sel)) }));
 
     expect(sceneImageUrls(listing, sel)).toContain(photo.imageUrl);
@@ -131,9 +131,20 @@ describe('assembleManifest', () => {
     expect(made.scenes.find((scene) => scene.type === 'outro')?.imageUrl).toBe('/media/second.jpg');
   });
 
+  it('backs the experiences with a second photo of the place in season when no offer has a photo', () => {
+    const photos = ['one', 'two'].map((name, index) => ({ id: `photo:season:${index}`, imageUrl: `https://upload.wikimedia.org/thumb/winter-${name}.jpg`, sourceId: 'wikimedia-commons' }));
+    const noOfferPhotos = selection({ seasonPhotos: photos, experiences: [{ ...tour, imageUrl: undefined }] });
+    const withOfferPhoto = selection({ seasonPhotos: photos, experiences: [tour] });
+    const experiencesImage = (sel: Selection): string | undefined =>
+      assembleManifest(input(sel, { images: mirrored(sceneImageUrls(listing, sel)) })).scenes.find((scene) => scene.type === 'experiences')?.imageUrl;
+
+    expect(experiencesImage(noOfferPhotos)).toBe('/media/winter-two.jpg');
+    expect(experiencesImage(withOfferPhoto)).toBe('/media/tour.jpg');
+  });
+
   it('opens on the listing photo when the seasonal photo did not mirror', () => {
-    const photo = { id: 'photo:season' as const, imageUrl: 'https://upload.wikimedia.org/thumb/innsbruck-winter.jpg', sourceId: 'wikimedia-commons' };
-    const made = assembleManifest(input(selection({ seasonPhoto: photo }), { images: mirrored(sceneImageUrls(listing, selection())) }));
+    const photo = { id: 'photo:season:0', imageUrl: 'https://upload.wikimedia.org/thumb/innsbruck-winter.jpg', sourceId: 'wikimedia-commons' };
+    const made = assembleManifest(input(selection({ seasonPhotos: [photo] }), { images: mirrored(sceneImageUrls(listing, selection())) }));
 
     expect(made.scenes.find((scene) => scene.type === 'hook')?.imageUrl).toBe('/media/hero.jpg');
     expect(made.scenes.find((scene) => scene.type === 'stay')?.imageUrl).toBe('/media/second.jpg');

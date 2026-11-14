@@ -53,13 +53,16 @@ function firstExperienceImage(sel: Selection): string | undefined {
   return planned.map((id) => byId.get(id)?.imageUrl).find((url) => url !== undefined);
 }
 
+/** The opening shows the first photo of the place in season; the experiences scene may borrow the second. */
+const SEASON_PHOTOS_SHOWN = 2;
+
 /** The hook, the stay and the outro each show a listing photo: a different one where the listing has several. */
 const LISTING_PHOTOS_SHOWN = 3;
 
 /** The original URLs of every image a video for this selection can show, without duplicates. */
 export function sceneImageUrls(listing: ListingContext, sel: Selection): string[] {
   const candidates = [
-    sel.seasonPhoto?.imageUrl,
+    ...sel.seasonPhotos.slice(0, SEASON_PHOTOS_SHOWN).map((photo) => photo.imageUrl),
     ...listing.photos.slice(0, LISTING_PHOTOS_SHOWN),
     ...sel.places.map((place) => place.imageUrl),
     firstExperienceImage(sel),
@@ -96,7 +99,7 @@ function sceneContent(scene: StoryScene, input: AssembleInput, facts: ReadonlyMa
   const { sel, listing, images } = input;
   const mirrored = (url: string | undefined): string | undefined => (url ? images.get(url) : undefined);
   const listingPhoto = mirrored(listing.photos[0]);
-  const seasonPhoto = mirrored(sel.seasonPhoto?.imageUrl);
+  const seasonPhoto = mirrored(sel.seasonPhotos[0]?.imageUrl);
   // When the opening shows the place in season, the listing's own photos each move one scene on.
   const laterPhotos = seasonPhoto ? listing.photos : listing.photos.slice(1);
   const stayPhoto = mirrored(laterPhotos[0]) ?? listingPhoto;
@@ -130,7 +133,8 @@ function sceneContent(scene: StoryScene, input: AssembleInput, facts: ReadonlyMa
             ? [{ title: fact.title, detail: `from ${formatPrice(fact.amount, fact.currency)}` }]
             : [],
         ),
-        imageUrl: mirrored(firstExperienceImage(sel)) ?? listingPhoto,
+        // An offer's own photo first; else the place in season, rather than the listing's bedroom.
+        imageUrl: mirrored(firstExperienceImage(sel)) ?? mirrored(sel.seasonPhotos[1]?.imageUrl) ?? listingPhoto,
       };
     case 'stay':
       return {

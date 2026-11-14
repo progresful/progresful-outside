@@ -94,16 +94,27 @@ that far. From that it works out how the stay will feel (snowy, cold, mild, warm
   If a seasonal search finds nothing within 25 km, the usual search runs instead;
 - prefers a bookable offer that suits it (ski, snowshoe, sleigh… or boat, kayak…);
 - opens on a photo of the place in that season, when Wikimedia Commons has one whose title names the place;
+- swaps each outdoor place's stock photo for one taken in that season, found by image search
+  ("Innsbrucker Hofgarten Innsbruck winter snow"). The search runs while the script is written and voiced.
+  The original photo is used when it sits on a public https host; otherwise the search engine's own copy;
+  and if neither downloads, or the search takes more than 9 seconds, the stock photo stays;
 - lets the voiceover open with the month and the usual weather.
 
-When the usual weather cannot be fetched, nothing is assumed and the video is built the plain way.
-Place photos are Google's cover photos: seasonal searches make them fit far more often, but a park found in
-winter can still show green trees.
+Image search goes to Bing Images through Context.dev. Google Images answers automated requests with a
+CAPTCHA page, which this project does not work around. Watermarked stock-photo sites and social networks are
+skipped, and a photo is used only when its title or address names the place or its city. The outro credits
+"Bing Images". These photos belong to whoever published them: fine for a demo, not cleared for a public product.
+
+When the usual weather cannot be fetched (it is tried twice), a winter stay beyond 40° of latitude is still
+treated as cold; otherwise nothing is assumed and the video is built the plain way. In a mild season no image
+search is made, and restaurants, bars, museums and spas always keep their stock photo.
 
 ## Limits worth knowing
 
 - **Context.dev allows a free organisation 10 requests a minute.** A new video in a new city uses 6 (8 with five
-  interests, one more for each seasonal search that had to fall back). The server queues beyond that rather than fail, so a second new city inside the same minute
+  interests), one more for each seasonal search that had to fall back, and one more for each outdoor place
+  whose photo is searched. Past ten, the photo searches are the ones that wait, and after 9 seconds the
+  stock photos are used. The server queues beyond that rather than fail, so a second new city inside the same minute
   gets a thinner video or "Not enough live data"; a retry a minute later works. On a bigger plan, set
   `CONTEXT_DEV_RPM` in `.env`.
 - Typical times, measured on real listings: 11–13 s for a new city, 4–8 s when the city is cached, instant when

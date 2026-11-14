@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { TTL_MS } from '../src/cache/cacheStore';
 import { createDiskMediaStore, type MediaStore } from '../src/media/mediaStore';
-import { MAX_IMAGE_BYTES, isAllowedImageUrl, mirrorImage } from '../src/media/mirror';
+import { MAX_IMAGE_BYTES, isAllowedImageUrl, isPublicAddress, mirrorFoundImage, mirrorImage } from '../src/media/mirror';
 
 const IMAGE_URL = 'https://a0.muscache.com/im/pictures/x.jpg';
 
@@ -125,5 +125,89 @@ describe('disk media store', () => {
     expect(await store.sweep(now)).toBe(1);
     expect(existsSync(join(dir, 'old.mp3'))).toBe(false);
     expect(existsSync(join(dir, 'fresh.mp3'))).toBe(true);
+  });
+});
+
+describe('isPublicAddress', () => {
+  it.each(['93.184.216.34', '8.8.8.8', '2606:2800:220:1:248:1893:25c8:1946'])('accepts %s', (address) => {
+    expect(isPublicAddress(address)).toBe(true);
+  });
+
+  it.each([
+    '127.0.0.1', '10.1.2.3', '172.16.0.9', '192.168.1.5', '169.254.169.254', '100.64.0.1', '0.0.0.0', '224.0.0.1',
+    '::1', '::', 'fd00::1', 'fe80::1', '::ffff:127.0.0.1', '::ffff:10.0.0.1', 'not-an-address',
+  ])('refuses %s', (address) => {
+    expect(isPublicAddress(address)).toBe(false);
+  });
+});
+
+describe('mirrorFoundImage', () => {
+  const FOUND = 'https://www.innsbruck.info/blog/uploads/lumagica.jpg';
+  const publicLookup = async (): Promise<string[]> => ['93.184.216.34'];
+
+  it('stores a photo the server found on a public host that is not on the list', async () => {
+    const media = memoryStore();
+    const fetchMock = vi.fn().mockResolvedValue(imageResponse(10));
+    const lookup = vi.fn(publicLookup);
+
+    const path = await mirrorFoundImage({ fetch: fetchMock, media, lookup }, FOUND);
+
+    expect(path).toMatch(/^\/media\/[0-9a-f]{32}\.jpg$/);
+    expect(lookup).toHaveBeenCalledWith('www.innsbruck.info');
+    expect((fetchMock.mock.calls[0] as [string, RequestInit])[1]).toMatchObject({ redirect: 'manual' });
+  });
+
+  it.each([
+    ['loopback', ['127.0.0.1']],
+    ['a private network', ['10.1.2.3']],
+    ['the cloud metadata address', ['169.254.169.254']],
+    ['a public and a private address at once', ['93.184.216.34', '192.168.1.5']],
+    ['IPv6 loopback', ['::1']],
+    ['nothing at all', []],
+  ])('never fetches a host that resolves to %s', async (_label, addresses) => {
+    const fetchMock = vi.fn().mockResolvedValue(imageResponse(10));
+
+    const path = await mirrorFoundImage({ fetch: fetchMock, media: memoryStore(), lookup: async () => addresses }, FOUND);
+
+    expect(path).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'http://www.innsbruck.info/a.jpg',
+    'https://127.0.0.1/a.jpg',
+    'https://[::1]/a.jpg',
+    'https://localhost/a.jpg',
+    'https://intranet/a.jpg',
+    'https://www.innsbruck.info:8443/a.jpg',
+    'https://user:pass@www.innsbruck.info/a.jpg',
+    'not a url',
+  ])('never looks up or fetches %s', async (url) => {
+    const fetchMock = vi.fn();
+    const lookup = vi.fn(publicLookup);
+
+    expect(await mirrorFoundImage({ fetch: fetchMock, media: memoryStore(), lookup }, url)).toBeNull();
+    expect(lookup).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not follow a redirect, and reports a failed lookup or download', async () => {
+    const onError = vi.fn();
+    const redirect = vi.fn().mockResolvedValue(new Response('', { status: 302, headers: { location: 'http://127.0.0.1/' } }));
+
+    expect(await mirrorFoundImage({ fetch: redirect, media: memoryStore(), lookup: publicLookup }, FOUND)).toBeNull();
+    expect(
+      await mirrorFoundImage({ fetch: vi.fn(), media: memoryStore(), lookup: vi.fn().mockRejectedValue(new Error('ENOTFOUND')), onError }, FOUND),
+    ).toBeNull();
+    expect(onError).toHaveBeenCalledWith(FOUND, expect.any(Error));
+  });
+
+  it('takes an allowlisted host without a lookup', async () => {
+    const lookup = vi.fn(publicLookup);
+
+    const path = await mirrorFoundImage({ fetch: vi.fn().mockResolvedValue(imageResponse(10)), media: memoryStore(), lookup }, 'https://ts1.mm.bing.net/th?id=OIP.x&w=1280');
+
+    expect(path).toMatch(/^\/media\//);
+    expect(lookup).not.toHaveBeenCalled();
   });
 });

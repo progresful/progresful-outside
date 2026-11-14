@@ -1,7 +1,7 @@
 import { VideoManifestSchema } from '@outside/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CreditsExhaustedError } from '../src/contextdev/client';
-import { NotEnoughDataError, TEMPLATE_VERSION, runPipeline, type StageUpdate } from '../src/pipeline/run';
+import { NotEnoughDataError, PHOTO_DEADLINE_MS, TEMPLATE_VERSION, runPipeline, type StageUpdate } from '../src/pipeline/run';
 import { alignFor, listing, memoryStore, pipelineDeps, source } from './fixtures/pipelineDeps';
 import { christmasMarket, placeFact, snowyClimate, tour } from './fixtures/selection';
 
@@ -18,7 +18,7 @@ afterEach(() => {
 
 describe('runPipeline', () => {
   it('has a template version for the cache key, raised when the video gained its seasonal opening', () => {
-    expect(TEMPLATE_VERSION).toBe(2);
+    expect(TEMPLATE_VERSION).toBe(3);
   });
 
   it('emits stages in order and returns a valid manifest', async () => {
@@ -194,7 +194,7 @@ describe('runPipeline', () => {
   });
 
   describe('with a photo of the place in season', () => {
-    const photo = { id: 'photo:season' as const, imageUrl: 'https://upload.wikimedia.org/thumb/lisbon-winter.jpg', sourceId: 'wikimedia-commons' };
+    const photo = { id: 'photo:season:0', imageUrl: 'https://upload.wikimedia.org/thumb/lisbon-winter.jpg', sourceId: 'wikimedia-commons' };
     const found = async () => ({ facts: [photo], source: source('wikimedia-commons', 'Wikimedia Commons') });
 
     it('searches for the city in the season of the stay', async () => {
@@ -229,6 +229,98 @@ describe('runPipeline', () => {
 
       expect(manifest.sources.map((entry) => entry.label)).not.toContain('Wikimedia Commons');
       expect(manifest.scenes[0]?.imageUrl).toMatch(/^\/media\//);
+    });
+  });
+
+  describe('with photos of the places in season', () => {
+    const snowy = async () => ({ facts: [snowyClimate], source: source('open-meteo-archive', 'Open-Meteo (past years)') });
+    const ORIGINAL = 'https://www.tyrol.example/photos/park-in-snow.jpg';
+    const COPY = 'https://ts1.mm.bing.net/th?id=OIP.park&w=1280&h=720&c=7&rs=1';
+    const found = vi.fn(async (_deps: unknown, p: { placeId: string }) => ({
+      facts: [{ id: `photo:${p.placeId}`, imageUrl: ORIGINAL, fallbackUrl: COPY, sourceId: 'bing-images' }],
+      source: source('bing-images', 'Bing Images'),
+    }));
+    /** Every image downloads, except the addresses the predicate refuses. */
+    const fetchExcept = (refused: (url: string) => boolean) =>
+      vi.fn(async (url: string | URL | Request) =>
+        refused(String(url)) ? new Response('', { status: 404 }) : new Response(new Uint8Array(10), { status: 200, headers: { 'content-type': 'image/jpeg' } }),
+      ) as unknown as typeof fetch;
+    const imageOf = (manifest: { scenes: Array<{ type: string; title?: string; imageUrl?: string }> }, title: string): string | undefined =>
+      manifest.scenes.find((scene) => scene.type === 'activity' && scene.title === title)?.imageUrl;
+
+    function deps(overrides: Partial<ReturnType<typeof pipelineDeps>> = {}) {
+      const base = pipelineDeps(overrides);
+      return { ...base, sources: { ...base.sources, climate: vi.fn(snowy), placePhoto: vi.fn(found) } };
+    }
+
+    it('searches a seasonal photo for the outdoor places only', async () => {
+      const d = deps();
+
+      await runPipeline(d, request, () => {});
+
+      expect(d.sources.placePhoto).toHaveBeenCalledTimes(1);
+      expect(d.sources.placePhoto).toHaveBeenCalledWith(expect.anything(), {
+        placeId: 'place:nature-a',
+        placeName: 'Nature Alpha',
+        city: 'Lisbon',
+        query: 'Nature Alpha Lisbon winter snow',
+      });
+    });
+
+    it('shows the seasonal photo in place of the stock one and credits the search', async () => {
+      const plain = await runPipeline(pipelineDeps(), request, () => {});
+      const seasonal = await runPipeline(deps(), request, () => {});
+
+      expect(imageOf(seasonal, 'Nature Alpha')).toMatch(/^\/media\//);
+      expect(imageOf(seasonal, 'Nature Alpha')).not.toBe(imageOf(plain, 'Nature Alpha'));
+      expect(imageOf(seasonal, 'Food Alpha')).toBe(imageOf(plain, 'Food Alpha'));
+      expect(seasonal.sources.map((entry) => entry.label)).toContain('Bing Images');
+    });
+
+    it('uses the search engine copy when the original cannot be downloaded', async () => {
+      const withOriginal = await runPipeline(deps(), request, () => {});
+      const withCopy = await runPipeline(deps({ fetch: fetchExcept((url) => url === ORIGINAL) }), request, () => {});
+
+      expect(imageOf(withCopy, 'Nature Alpha')).toMatch(/^\/media\//);
+      expect(imageOf(withCopy, 'Nature Alpha')).not.toBe(imageOf(withOriginal, 'Nature Alpha'));
+      expect(withCopy.sources.map((entry) => entry.label)).toContain('Bing Images');
+    });
+
+    it('keeps the stock photo, uncredited, when neither can be downloaded', async () => {
+      const plain = await runPipeline(pipelineDeps(), request, () => {});
+      const neither = await runPipeline(deps({ fetch: fetchExcept((url) => url === ORIGINAL || url === COPY) }), request, () => {});
+
+      expect(imageOf(neither, 'Nature Alpha')).toBe(imageOf(plain, 'Nature Alpha'));
+      expect(neither.sources.map((entry) => entry.label)).not.toContain('Bing Images');
+    });
+
+    it('never fetches a found photo from a host that is not public', async () => {
+      const fetchMock = fetchExcept(() => false);
+      const manifest = await runPipeline(deps({ fetch: fetchMock, lookup: async () => ['10.0.0.7'] }), request, () => {});
+
+      expect(vi.mocked(fetchMock).mock.calls.map(([url]) => String(url))).not.toContain(ORIGINAL);
+      expect(imageOf(manifest, 'Nature Alpha')).toMatch(/^\/media\//);
+    });
+
+    it('does not search photos when the season is a mild one', async () => {
+      const d = pipelineDeps();
+
+      await runPipeline(d, request, () => {});
+
+      expect(d.sources.placePhoto).not.toHaveBeenCalled();
+    });
+
+    it('builds the video without a photo search that takes too long', async () => {
+      vi.useFakeTimers();
+      const base = deps();
+      const d = { ...base, sources: { ...base.sources, placePhoto: vi.fn(() => new Promise<never>(() => {})) } };
+
+      const pending = runPipeline(d, request, () => {});
+      await vi.advanceTimersByTimeAsync(PHOTO_DEADLINE_MS);
+      const manifest = await pending;
+
+      expect(imageOf(manifest, 'Nature Alpha')).toMatch(/^\/media\//);
+      expect(manifest.sources.map((entry) => entry.label)).not.toContain('Bing Images');
     });
   });
 

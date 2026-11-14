@@ -67,8 +67,13 @@ describe('fetchSeasonPhoto', () => {
 
     expect(result.facts).toEqual([
       {
-        id: 'photo:season',
+        id: 'photo:season:0',
         imageUrl: `https://upload.wikimedia.org/thumb/${encodeURIComponent('File:Innsbruck im Winter Hofkirche und Hofburg.jpg')}/1280px.jpg`,
+        sourceId: 'wikimedia-commons',
+      },
+      {
+        id: 'photo:season:1',
+        imageUrl: `https://upload.wikimedia.org/thumb/${encodeURIComponent('File:Innsbruck-winter.jpg')}/1280px.jpg`,
         sourceId: 'wikimedia-commons',
       },
     ]);
@@ -78,6 +83,20 @@ describe('fetchSeasonPhoto', () => {
       url: `https://commons.wikimedia.org/wiki/${encodeURIComponent('File:Innsbruck im Winter Hofkirche und Hofburg.jpg')}`,
       fetchedAt: new Date(NOW).toISOString(),
     });
+  });
+
+  it('returns at most three photos, best-ranked first', async () => {
+    const pages = [5, 3, 1, 4, 2].map((index) => ({ index, title: `File:Innsbruck winter ${index}.jpg` }));
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(commons(pages)));
+
+    const result = await fetchSeasonPhoto(makeDeps({ fetch: fetchMock }), params);
+
+    expect(result.facts.map((photo) => photo.id)).toEqual(['photo:season:0', 'photo:season:1', 'photo:season:2']);
+    expect(result.facts.map((photo) => decodeURIComponent(photo.imageUrl))).toEqual([
+      expect.stringContaining('winter 1.jpg'),
+      expect.stringContaining('winter 2.jpg'),
+      expect.stringContaining('winter 3.jpg'),
+    ]);
   });
 
   it.each([

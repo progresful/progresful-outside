@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { lookup as dnsLookup } from 'node:dns/promises';
+import { BlockList, isIP } from 'node:net';
 import type { MediaStore } from './mediaStore';
 
 /**
@@ -15,6 +17,7 @@ export const IMAGE_HOST_ALLOWLIST: readonly string[] = [
   'getyourguide.com',
   'viator.com',
   'wikimedia.org', // Wikimedia Commons: the photo of the place in season
+  'mm.bing.net', // Bing's own copies of image-search results
 ];
 
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -33,6 +36,51 @@ export interface MirrorDeps {
   fetch: typeof fetch;
   media: MediaStore;
   onError?: (url: string, error: unknown) => void;
+  /** Resolves a host name to its addresses. Injected for tests; DNS by default. */
+  lookup?: (hostname: string) => Promise<string[]>;
+}
+
+/** Addresses that are not the public internet: loopback, private networks, link-local, and the like. */
+const NOT_PUBLIC = new BlockList();
+for (const [network, prefix] of [
+  ['0.0.0.0', 8], ['10.0.0.0', 8], ['100.64.0.0', 10], ['127.0.0.0', 8], ['169.254.0.0', 16], ['172.16.0.0', 12],
+  ['192.0.0.0', 24], ['192.168.0.0', 16], ['198.18.0.0', 15], ['224.0.0.0', 3],
+] as const) {
+  NOT_PUBLIC.addSubnet(network, prefix, 'ipv4');
+}
+for (const [network, prefix] of [['::', 127], ['fc00::', 7], ['fe80::', 10], ['ff00::', 8], ['64:ff9b::', 96]] as const) {
+  NOT_PUBLIC.addSubnet(network, prefix, 'ipv6');
+}
+const MAPPED_IPV4 = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i;
+
+/** Whether an IP address is on the public internet. Anything unreadable is not. */
+export function isPublicAddress(address: string): boolean {
+  const mapped = MAPPED_IPV4.exec(address)?.[1];
+  if (mapped) {
+    return isPublicAddress(mapped);
+  }
+  const family = isIP(address);
+  if (family === 0) {
+    return false;
+  }
+  return !NOT_PUBLIC.check(address, family === 4 ? 'ipv4' : 'ipv6');
+}
+
+async function resolveAll(hostname: string): Promise<string[]> {
+  return (await dnsLookup(hostname, { all: true })).map((entry) => entry.address);
+}
+
+/** A plain https address on a named host: no credentials, no port, no bare IP, no single-label name. */
+function namedHttpsHost(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    const plain = parsed.protocol === 'https:' && parsed.username === '' && parsed.password === '' && parsed.port === '';
+    return plain && isIP(host.replace(/^\[|\]$/g, '')) === 0 && host.includes('.') && !host.endsWith('.local') ? host : null;
+  } catch {
+    // Not a URL: nothing to fetch.
+    return null;
+  }
 }
 
 export function isAllowedImageUrl(url: string): boolean {
@@ -95,6 +143,32 @@ export async function mirrorImage(deps: MirrorDeps, url: string): Promise<string
     return null;
   }
   try {
+    return await download(deps, url);
+  } catch (error: unknown) {
+    deps.onError?.(url, error);
+    return null;
+  }
+}
+
+/**
+ * Copies a photo the server itself found by image search. Such photos sit on any site, so the
+ * host cannot be on a list; instead the host must be a public one: a named https host every one
+ * of whose addresses is on the public internet. Redirects are never followed. Client-supplied
+ * photo addresses do not come this way; they stay on the allowlist. Never throws.
+ */
+export async function mirrorFoundImage(deps: MirrorDeps, url: string): Promise<string | null> {
+  if (isAllowedImageUrl(url)) {
+    return mirrorImage(deps, url);
+  }
+  const host = namedHttpsHost(url);
+  if (host === null) {
+    return null;
+  }
+  try {
+    const addresses = await (deps.lookup ?? resolveAll)(host);
+    if (addresses.length === 0 || !addresses.every(isPublicAddress)) {
+      return null;
+    }
     return await download(deps, url);
   } catch (error: unknown) {
     deps.onError?.(url, error);

@@ -23,6 +23,7 @@ const ScrapeResponseSchema = z.looseObject({
   url: z.string().default(''),
   parsed: OutputSchema.default(EMPTY_OUTPUT),
   markdown: OutputSchema.default(EMPTY_OUTPUT),
+  html: OutputSchema.default(EMPTY_OUTPUT),
   json: OutputSchema.default(EMPTY_OUTPUT),
   images: OutputSchema.default(EMPTY_OUTPUT),
   cache_metadata: z

@@ -28,8 +28,8 @@ export interface Selection {
   weather: WeatherFact[];
   /** What the weather is usually like at this time of year; at most one. Opens the video. */
   climate: ClimateFact[];
-  /** A photo of the place in season, for the opening scene. */
-  seasonPhoto?: SeasonPhoto;
+  /** Photos of the place in season, best first: the first opens the video. */
+  seasonPhotos: SeasonPhoto[];
 }
 
 /** Sends a system and user prompt, returns the model's JSON matching the schema. Injected for tests. */

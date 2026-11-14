@@ -71,12 +71,15 @@ export function pipelineDeps(overrides: Partial<PipelineDeps> = {}): PipelineDep
       // No usual weather and no seasonal photo unless a test supplies them.
       climate: vi.fn(async () => ({ facts: [], source: null })),
       seasonPhoto: vi.fn(async () => ({ facts: [], source: null })),
+      placePhoto: vi.fn(async () => ({ facts: [], source: null })),
     },
     // No model in tests: the pipeline falls back to the template script, which is valid by construction.
     complete: vi.fn().mockRejectedValue(new Error('no model in tests')),
     synthesize: vi.fn(async (lines: readonly string[]) => ({ audio: Buffer.from('mp3'), alignment: alignFor(lines) })),
     media: memoryStore(),
     today: () => TODAY,
+    // Every host a test names is treated as a public one.
+    lookup: async () => ['93.184.216.34'],
     ...overrides,
   };
 }

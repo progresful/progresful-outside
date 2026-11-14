@@ -13,6 +13,7 @@ import { synthesize } from './pipeline/voice';
 import { fetchClimate } from './sources/climate';
 import { fetchEvents } from './sources/events';
 import { fetchExperiences } from './sources/experiences';
+import { fetchPlacePhoto } from './sources/placePhoto';
 import { fetchPlaces } from './sources/places';
 import { fetchSeasonPhoto } from './sources/seasonPhoto';
 import { fetchWeather } from './sources/weather';
@@ -34,6 +35,7 @@ function liveSources(): PipelineSources {
     weather: fetchWeather,
     climate: fetchClimate,
     seasonPhoto: fetchSeasonPhoto,
+    placePhoto: fetchPlacePhoto,
   };
 }
 

@@ -8,7 +8,9 @@ import type { LatLng, SourceDeps, SourceResult } from './types';
 
 const SOURCE_ID = 'open-meteo-archive';
 const ARCHIVE_URL = 'https://archive-api.open-meteo.com/v1/archive';
-const TIMEOUT_MS = 6_000;
+/** Each attempt gets this long; a stalled connection is given up on and tried once more. */
+const ATTEMPT_TIMEOUT_MS = 3_000;
+const ATTEMPTS = 2;
 
 const YEARS_OF_HISTORY = 3;
 const YEARS_TO_TRY = 5;
@@ -110,15 +112,28 @@ function percentAtLeast(values: readonly number[], threshold: number): number {
   return values.length === 0 ? 0 : Math.round((100 * values.filter((value) => value >= threshold).length) / values.length);
 }
 
-async function requestYear(deps: SourceDeps, p: LatLng, range: DateRange): Promise<ArchiveDays> {
-  const url =
-    `${ARCHIVE_URL}?latitude=${p.lat}&longitude=${p.lng}&start_date=${range.start}&end_date=${range.end}` +
-    '&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,snowfall_sum&timezone=auto';
-  const res = await deps.fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+async function requestOnce(deps: SourceDeps, url: string): Promise<ArchiveDays> {
+  const res = await deps.fetch(url, { signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS) });
   if (!res.ok) {
     throw new Error(`Open-Meteo archive responded with status ${res.status}`);
   }
   return ArchiveSchema.parse(await res.json()).daily;
+}
+
+/** One past year's days. The archive now and then stalls on a request; a second try usually lands. */
+async function requestYear(deps: SourceDeps, p: LatLng, range: DateRange): Promise<ArchiveDays> {
+  const url =
+    `${ARCHIVE_URL}?latitude=${p.lat}&longitude=${p.lng}&start_date=${range.start}&end_date=${range.end}` +
+    '&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,snowfall_sum&timezone=auto';
+  let failure: unknown;
+  for (let attempt = 0; attempt < ATTEMPTS; attempt += 1) {
+    try {
+      return await requestOnce(deps, url);
+    } catch (error: unknown) {
+      failure = error;
+    }
+  }
+  throw failure;
 }
 
 function toFact(years: readonly ArchiveDays[], window: TripWindow): ClimateFact | null {

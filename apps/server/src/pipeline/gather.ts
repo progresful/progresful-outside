@@ -26,7 +26,8 @@ export interface Gathered {
   events: EventFact[];
   weather: WeatherFact[];
   climate: ClimateFact[];
-  seasonPhoto?: SeasonPhoto;
+  /** Photos of the place in season, best first; empty when none was found. */
+  seasonPhotos: SeasonPhoto[];
   /** The season the places and offers were searched for. */
   season: Season;
   sources: Source[];
@@ -44,13 +45,16 @@ export interface GatherContext {
  * Runs one source with a deadline. A failure or a timeout is reported and replaced by `fallback`;
  * exhausted credits are the one failure that must stop the whole job.
  */
-async function guarded<T>(deps: PipelineDeps, sourceId: string, fallback: T, call: () => Promise<T>): Promise<T> {
+export async function guarded<T>(
+  deps: PipelineDeps,
+  sourceId: string,
+  fallback: T,
+  call: () => Promise<T>,
+  deadlineMs: number = SOURCE_DEADLINE_MS,
+): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`${sourceId} did not answer within ${SOURCE_DEADLINE_MS} ms`)),
-      SOURCE_DEADLINE_MS,
-    );
+    timer = setTimeout(() => reject(new Error(`${sourceId} did not answer within ${deadlineMs} ms`)), deadlineMs);
   });
   try {
     return await Promise.race([call(), deadline]);
@@ -148,14 +152,13 @@ export async function gather(
     ),
   ]);
   const used = [...places, ...experiences, events, weather, climate, seasonPhoto];
-  const photo = seasonPhoto.facts[0];
   return {
     places: places.flatMap((result) => result.facts),
     experiences: experiences.flatMap((result) => result.facts),
     events: events.facts,
     weather: weather.facts,
     climate: climate.facts,
-    ...(photo ? { seasonPhoto: photo } : {}),
+    seasonPhotos: seasonPhoto.facts,
     season,
     sources: used.flatMap((result) => (result.source && result.facts.length > 0 ? [result.source] : [])),
   };

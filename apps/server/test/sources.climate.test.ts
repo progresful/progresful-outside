@@ -103,6 +103,20 @@ describe('fetchClimate', () => {
     expect(result.facts[0]).toMatchObject({ tempMinC: -11, tempMaxC: 4 });
   });
 
+  it('asks a year again when its first request fails', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('stalled'))
+      .mockRejectedValueOnce(new Error('stalled'))
+      .mockRejectedValueOnce(new Error('stalled'))
+      .mockImplementation(async () => jsonResponse(coldYear));
+
+    const result = await fetchClimate(makeDeps({ fetch: fetchMock }), { ...innsbruck, window: january, today: '2026-11-14' });
+
+    expect(result.facts[0]).toMatchObject({ tempMinC: -11, tempMaxC: 4 });
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+
   it('returns nothing, not a throw, when no year answers', async () => {
     const onSourceError = vi.fn();
     const fetchMock = vi.fn().mockRejectedValue(new Error('offline'));

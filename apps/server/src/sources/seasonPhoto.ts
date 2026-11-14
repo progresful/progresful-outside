@@ -38,10 +38,13 @@ type Page = z.infer<typeof PageSchema>;
 
 /** A photo of the place as it looks at the time of the stay. Shown, never spoken about. */
 export interface SeasonPhoto {
-  id: 'photo:season';
+  id: string;
   imageUrl: string;
   sourceId: string;
 }
+
+/** The opening scene takes the best photo; the others stand in where a scene has none of its own. */
+const MAX_PHOTOS = 3;
 
 export interface SeasonPhotoParams {
   city: string;
@@ -81,7 +84,7 @@ function searchUrl(query: string): string {
   return `${API_URL}?${params.toString()}`;
 }
 
-async function search(deps: SourceDeps, p: SeasonPhotoParams): Promise<Page | undefined> {
+async function search(deps: SourceDeps, p: SeasonPhotoParams): Promise<Page[]> {
   const res = await deps.fetch(searchUrl(p.query), {
     headers: { 'user-agent': USER_AGENT },
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -94,23 +97,29 @@ async function search(deps: SourceDeps, p: SeasonPhotoParams): Promise<Page | un
   return pages
     .flatMap((raw) => PageSchema.safeParse(raw).data ?? [])
     .sort((a, b) => a.index - b.index)
-    .find((page) => isUsable(page, p.city));
+    .filter((page) => isUsable(page, p.city))
+    .slice(0, MAX_PHOTOS);
 }
 
 /**
- * A freely licensed photo of the place in the season of the stay, from Wikimedia Commons.
- * Only a photo whose title names the place is used; none is better than a wrong one. Never throws.
+ * Up to three freely licensed photos of the place in the season of the stay, from Wikimedia
+ * Commons, best first. Only a photo whose title names the place is used; none is better than a
+ * wrong one. Never throws.
  */
 export function fetchSeasonPhoto(deps: SourceDeps, p: SeasonPhotoParams): Promise<SourceResult<SeasonPhoto>> {
   const key = scrapeKey('season-photo', { city: fold(p.city.trim()), query: fold(p.query.trim()) });
   return cachedResult(deps, SOURCE_ID, key, async () => {
-    const page = await search(deps, p);
-    const info = page?.imageinfo[0];
+    const pages = await search(deps, p);
     const fetchedAt = deps.now();
-    if (!info) {
+    const facts = pages.flatMap((page, index) => {
+      const info = page.imageinfo[0];
+      return info ? [{ id: `photo:season:${index}`, imageUrl: info.thumburl, sourceId: SOURCE_ID }] : [];
+    });
+    const first = pages[0]?.imageinfo[0];
+    if (!first || facts.length === 0) {
       return { result: { facts: [], source: null }, fetchedAt };
     }
-    const source: Source = { id: SOURCE_ID, label: 'Wikimedia Commons', url: info.descriptionurl, fetchedAt: new Date(fetchedAt).toISOString() };
-    return { result: { facts: [{ id: 'photo:season', imageUrl: info.thumburl, sourceId: SOURCE_ID }], source }, fetchedAt };
+    const source: Source = { id: SOURCE_ID, label: 'Wikimedia Commons', url: first.descriptionurl, fetchedAt: new Date(fetchedAt).toISOString() };
+    return { result: { facts, source }, fetchedAt };
   });
 }
