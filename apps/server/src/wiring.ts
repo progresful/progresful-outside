@@ -1,0 +1,89 @@
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import type { AppDeps } from './app';
+import { createSqliteCacheStore } from './cache/cacheStore';
+import { createDeduper } from './cache/dedupe';
+import type { Config } from './config';
+import { createContextDevClient } from './contextdev/client';
+import { createJobStore } from './jobs/jobStore';
+import { createDiskMediaStore } from './media/mediaStore';
+import { createOpenAiComplete } from './pipeline/openaiComplete';
+import { runPipeline, type PipelineDeps, type PipelineSources } from './pipeline/run';
+import { synthesize } from './pipeline/voice';
+import { fetchPlaces } from './sources/places';
+import { emptyResult } from './sources/types';
+import { fetchWeather } from './sources/weather';
+
+const SWEEP_INTERVAL_MS = 10 * 60 * 1000;
+
+export interface Runtime {
+  appDeps: AppDeps;
+  /** Starts the periodic removal of expired cache rows and media files. */
+  startSweeper(onError: (error: unknown) => void): void;
+}
+
+/**
+ * The live-web sources in use. Experiences and events answer with nothing until their adapters
+ * land (plan tasks 9 and 10, which wait on the source spike); the pipeline already copes with that.
+ */
+function liveSources(): PipelineSources {
+  return {
+    places: fetchPlaces,
+    experiences: async () => [],
+    events: async () => emptyResult(),
+    weather: fetchWeather,
+  };
+}
+
+/** Builds every real dependency from the configuration. `onSourceError` receives skipped-source failures. */
+export function createRuntime(config: Config, onSourceError: (sourceId: string, error: unknown) => void): Runtime {
+  mkdirSync(config.dataDir, { recursive: true });
+  const mediaDir = join(config.dataDir, 'media');
+  const cache = createSqliteCacheStore(join(config.dataDir, 'cache.sqlite'));
+  const media = createDiskMediaStore(mediaDir);
+
+  const pipelineDeps: PipelineDeps = {
+    client: createContextDevClient({
+      apiKey: config.contextDevApiKey,
+      fixtures: { mode: config.fixtureMode, dir: join(config.dataDir, 'fixtures') },
+    }),
+    cache,
+    dedupe: createDeduper(),
+    now: () => Date.now(),
+    fetch,
+    onSourceError,
+    sources: liveSources(),
+    complete: createOpenAiComplete({ apiKey: config.openaiApiKey, model: config.openaiModel }),
+    synthesize: (lines) =>
+      synthesize(
+        { fetch, apiKey: config.elevenLabsApiKey, voiceId: config.elevenLabsVoiceId, modelId: config.elevenLabsModelId },
+        lines,
+      ),
+    media,
+    today: () => new Date().toISOString().slice(0, 10),
+  };
+
+  return {
+    appDeps: {
+      logger: true,
+      mediaDir,
+      videos: {
+        cache,
+        jobs: createJobStore(),
+        run: (input, onStage) => runPipeline(pipelineDeps, input, onStage),
+        now: () => Date.now(),
+      },
+    },
+    startSweeper(onError: (error: unknown) => void): void {
+      const sweep = (): void => {
+        try {
+          cache.sweep();
+        } catch (error: unknown) {
+          onError(error);
+        }
+        media.sweep().catch(onError);
+      };
+      setInterval(sweep, SWEEP_INTERVAL_MS).unref();
+    },
+  };
+}

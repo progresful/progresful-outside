@@ -36,6 +36,13 @@ describe('interests', () => {
     ]);
   });
 
+  it('has a noun per preset for the "Finding … spots" progress line', () => {
+    expect(INTERESTS.map((i) => i.stageNoun)).toEqual([
+      'food', 'nightlife', 'museum', 'historic', 'nature', 'beach',
+      'adventure', 'family', 'wellness', 'shopping', 'live music', 'hidden',
+    ]);
+  });
+
   it('gives every preset at least one maps query and one experience keyword', () => {
     for (const interest of INTERESTS) {
       expect(interest.mapsQueries.length).toBeGreaterThan(0);

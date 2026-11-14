@@ -13,10 +13,15 @@ export interface MediaStore {
 
 const SAFE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
+/** A plain file name: no path separators, no leading dot. */
+export function isSafeMediaName(name: string): boolean {
+  return SAFE_NAME.test(name);
+}
+
 export function createDiskMediaStore(dir: string): MediaStore {
   return {
     async put(name: string, data: Buffer): Promise<string> {
-      if (!SAFE_NAME.test(name)) {
+      if (!isSafeMediaName(name)) {
         throw new Error(`Unsafe media name: ${JSON.stringify(name)}`);
       }
       await mkdir(dir, { recursive: true });

@@ -3,10 +3,16 @@ import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 import { fail } from './envelope';
 import { healthRoutes } from './routes/health';
+import { mediaRoutes } from './routes/media';
+import { videoRoutes, type VideoRouteDeps } from './routes/videos';
 
 export interface AppDeps {
   logger?: boolean;
   rateLimitMax?: number;
+  /** Enables the video routes. */
+  videos?: VideoRouteDeps;
+  /** Enables `/media/:file`, served from this folder. */
+  mediaDir?: string;
 }
 
 const BODY_LIMIT_BYTES = 64 * 1024;
@@ -38,6 +44,12 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   app.register(cors, { origin: [EXTENSION_ORIGIN] });
   app.register(rateLimit, { max: deps.rateLimitMax ?? DEFAULT_RATE_LIMIT_MAX, timeWindow: '1 minute' });
   app.register(healthRoutes);
+  if (deps.videos) {
+    app.register(videoRoutes(deps.videos));
+  }
+  if (deps.mediaDir) {
+    app.register(mediaRoutes(deps.mediaDir));
+  }
 
   return app;
 }
