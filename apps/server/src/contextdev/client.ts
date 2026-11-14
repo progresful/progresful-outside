@@ -39,7 +39,7 @@ export type ScrapeResponse = z.infer<typeof ScrapeResponseSchema>;
 
 export interface ContextDevClient {
   scrape(body: Record<string, unknown>): Promise<ScrapeResponse>;
-  /** The search response shape is recorded in docs/spikes/2026-11-14-sources.md; callers narrow it. */
+  /** The search response shape is recorded in docs/sources.md; callers narrow it. */
   search(body: Record<string, unknown>): Promise<unknown>;
 }
 

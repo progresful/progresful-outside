@@ -89,7 +89,7 @@ pnpm bundle
 rsync -az --delete \
   --exclude .git --exclude node_modules --exclude .env --exclude apps/server/data \
   --exclude dist --exclude dist-release --exclude .wxt --exclude coverage \
-  --exclude .superpowers --exclude e2e/out --exclude spikes/out --exclude .DS_Store \
+  --exclude .superpowers --exclude e2e/out --exclude .DS_Store \
   ./ "$HOST:$DIR/"
 say "Sent."
 

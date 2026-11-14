@@ -28,7 +28,7 @@ export interface ExperienceSource {
 const VIATOR_BREADCRUMB = /\[Things to do in ([^\]]+)\]\(https:\/\/www\.viator\.com\/[^)\s]*\/d\d+\)/;
 
 /**
- * The marketplaces kept by the source spike (docs/spikes/2026-11-14-sources.md): both show
+ * The marketplaces kept by the source spike (docs/sources.md): both show
  * per-person prices on their results page. Viator is Tripadvisor's booking marketplace.
  */
 export const EXPERIENCE_SOURCES: readonly ExperienceSource[] = [

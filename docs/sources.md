@@ -1,7 +1,7 @@
 # Source spike — which sources work through Context.dev
 
-Run on 2026-11-14 against Lisbon and Porto. Scripts: `spikes/sources.mts`, `spikes/md.mts`, `spikes/models.mts`
-(throwaway; raw output goes to the git-ignored `spikes/out/`). Recorded responses used by tests are in
+Run on 2026-11-14 against Lisbon and Porto, with throwaway scripts that have since been removed from the
+repository (they are in its history under `spikes/`). Recorded responses used by tests are in
 `apps/server/test/fixtures/contextdev/`. Credits spent: about 80 of the 600-credit cap.
 
 ## The finding that shapes everything: 10 requests per minute

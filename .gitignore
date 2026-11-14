@@ -12,5 +12,6 @@ apps/site/public/promo/
 coverage
 .superpowers/
 .DS_Store
-spikes/out/
 e2e/out/
+# Raw output of the source spike, left on the machine that ran it.
+spikes/

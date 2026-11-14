@@ -30,7 +30,7 @@ export interface Config {
 const REQUIRED_KEYS = ['CONTEXT_DEV_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY'] as const;
 
 /**
- * Picked by benchmark on 2026-11-14 (docs/spikes/2026-11-14-sources.md): of the models that kept
+ * Picked by benchmark on 2026-11-14 (docs/sources.md): of the models that kept
  * every script inside the accuracy guard, this one wrote the best lines, in about two seconds.
  */
 const DEFAULT_OPENAI_MODEL = 'gpt-6-sol';

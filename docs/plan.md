@@ -1,5 +1,8 @@
 # Outside — Must Tier Implementation Plan
 
+> Kept as it was written on 14 November 2026, before the build. Paths in it are the ones planned then;
+> what was actually built, and where, is in the [README](../README.md) and [decisions.md](decisions.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A Chrome extension that, on an Airbnb or Booking.com listing page, builds and plays a 10–30 s narrated video about the area around the listing from live web data, tuned to the user's interests and trip dates.
@@ -8,7 +11,7 @@
 
 **Tech Stack:** pnpm workspace · TypeScript · Vitest · WXT + React (extension) · Fastify + zod (server) · better-sqlite3 · Remotion (`remotion`, `@remotion/player`) · `openai` · Context.dev REST · ElevenLabs REST · Playwright.
 
-**Spec:** `docs/superpowers/specs/2026-11-14-listing-promo-video-design.md` — read it first. Mocks: https://claude.ai/artifact/1uacgqAPpeKmoGnrDSVMnj
+**Spec:** [design.md](design.md) — read it first. Mocks: https://claude.ai/artifact/1uacgqAPpeKmoGnrDSVMnj
 
 **Scope:** spikes plus the spec's **Must** tier (§8). Should and Stretch (Street View, area guide, MP4 on demand, price-change chips, monitors, news, music) get their own plan once this one demos end to end.
 
