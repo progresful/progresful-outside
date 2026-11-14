@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { LINES_JSON_SCHEMA, factMap, planScenes, scriptWithGuard, templateLines, writeLines } from '../src/pipeline/script';
 import { validateLines } from '../src/pipeline/validateScript';
-import { placeFact, selection } from './fixtures/selection';
+import { christmasMarket, market, museum, park, placeFact, selection } from './fixtures/selection';
 
 const sel = selection();
 const plan = planScenes(sel);
@@ -128,6 +128,56 @@ describe('writeLines', () => {
     expect(user).toContain('Alfama food tour');
     expect(user).toContain('€45');
     expect(schema).toBe(LINES_JSON_SCHEMA);
+  });
+
+  it('tells the model what each place is and where the event is', async () => {
+    const complete = vi.fn().mockResolvedValue({ lines: goodLines });
+    const concert = { ...christmasMarket, title: 'Bryan Adams', dateText: '20 November', venue: 'MEO Arena, Lisbon, Portugal' };
+    const rich = selection({ places: [{ ...market, category: 'Food court' }, museum, park], events: [concert] });
+
+    await writeLines(complete, planScenes(rich), factMap(rich), rich.place, 65);
+
+    const [system, user] = complete.mock.calls[0] as [string, string];
+    expect(user).toContain('"what": "Food court"');
+    expect(user).toContain('"where": "MEO Arena"');
+    expect(user).not.toContain('MEO Arena, Lisbon');
+    expect(system).toContain('do not invent details');
+  });
+
+  it('lets a line say a number that is part of the venue name', () => {
+    const concert = { ...christmasMarket, title: 'Disco night', dateText: '20 November', venue: 'Studio 54, Lisbon, Portugal' };
+    const s = selection({ events: [concert] });
+    const lines = withLine(5, 'Disco night is on at Studio 54 on 20 November.');
+
+    expect(validateLines(lines, planScenes(s), factMap(s), 65)).toEqual({ ok: true });
+  });
+
+  it('caps each line so 7 scenes fit the budget', async () => {
+    const complete = vi.fn().mockResolvedValue({ lines: goodLines });
+
+    await writeLines(complete, plan, facts, sel.place, 65);
+
+    // 65 words over 7 scenes is 9 a line, plus 2 of headroom.
+    expect((complete.mock.calls[0] as [string])[0]).toContain('At most 11 words per line');
+  });
+
+  it('never caps a line below 8 words', async () => {
+    const complete = vi.fn().mockResolvedValue({ lines: goodLines });
+
+    await writeLines(complete, plan, facts, sel.place, 20);
+
+    expect((complete.mock.calls[0] as [string])[0]).toContain('At most 8 words per line');
+  });
+
+  it('describes travel time in words a voice can read', async () => {
+    const complete = vi.fn().mockResolvedValue({ lines: goodLines });
+
+    await writeLines(complete, plan, facts, sel.place, 65);
+
+    const user = (complete.mock.calls[0] as [string, string])[1];
+    expect(user).toContain('about 13 minutes on foot');
+    expect(user).toContain('about 7 minutes by car');
+    expect(user).not.toContain('≈');
   });
 
   it('throws when the model does not return a list of strings', async () => {

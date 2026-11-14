@@ -1,9 +1,10 @@
 import type { EventFact, ExperienceFact, Fact, PlaceFact, SceneType, WeatherFact } from '@outside/shared';
 import { z } from 'zod';
+import { venueName } from '../sources/events';
 import { formatPrice } from '../sources/price';
 import type { TripWindow } from '../sources/tripWindow';
 import type { NormalizedPlace } from './normalize';
-import { travelLabel } from './select';
+import { spokenTravel } from './select';
 import { MAX_WORDS_PER_LINE, validateLines } from './validateScript';
 
 export interface PlannedScene {
@@ -28,7 +29,10 @@ export interface Selection {
 /** Sends a system and user prompt, returns the model's JSON matching the schema. Injected for tests. */
 export type Complete = (system: string, user: string, jsonSchema: object) => Promise<unknown>;
 
-export const DEFAULT_WORD_BUDGET = 50;
+/** About 25 seconds of speech: room for seven scenes inside the 30-second limit. */
+export const DEFAULT_WORD_BUDGET = 65;
+const MIN_WORDS_PER_LINE = 8;
+const LINE_HEADROOM_WORDS = 2;
 const MAX_EXPERIENCES = 3;
 const MAX_ATTEMPTS = 2;
 
@@ -64,27 +68,45 @@ export function planScenes(sel: Selection): PlannedScene[] {
 function describeFact(fact: Fact): Record<string, unknown> {
   switch (fact.kind) {
     case 'place':
-      return { name: fact.name, rating: fact.rating, reviews: fact.reviewCount, travel: travelLabel(fact.distanceM) };
+      return {
+        name: fact.name,
+        ...(fact.category ? { what: fact.category } : {}),
+        rating: fact.rating,
+        reviews: fact.reviewCount,
+        travel: spokenTravel(fact.distanceM),
+      };
     case 'experience':
       return { title: fact.title, price: formatPrice(fact.amount, fact.currency), duration: fact.durationText };
     case 'event':
-      return { title: fact.title, when: fact.dateText };
+      return { title: fact.title, when: fact.dateText, ...(venueName(fact.venue) ? { where: venueName(fact.venue) } : {}) };
     case 'weather':
       return { lowC: fact.tempMinC, highC: fact.tempMaxC, rainChancePercent: fact.precipitationChance };
   }
 }
 
+/** Models keep to a per-line limit far better than to a total, so the budget is shared out per scene. */
+function wordsPerLine(sceneCount: number, wordBudget: number): number {
+  const share = Math.floor(wordBudget / Math.max(1, sceneCount)) + LINE_HEADROOM_WORDS;
+  return Math.min(MAX_WORDS_PER_LINE, Math.max(MIN_WORDS_PER_LINE, share));
+}
+
 function systemPrompt(sceneCount: number, place: NormalizedPlace, wordBudget: number): string {
   return [
-    `You write the voiceover for a short travel video about the area around a holiday rental in ${place.city}, ${place.country}.`,
+    `You write the voiceover for a short, upbeat travel video about what is around a holiday rental in ${place.city}, ${place.country}.`,
     `Return exactly ${sceneCount} lines, one per scene, in scene order.`,
-    'Rules:',
-    '- Plain, warm, spoken English. No hashtags, no emoji.',
+    'How to write:',
+    '- Sound like a friend who knows the area: warm, concrete, a little excited. Plain spoken English.',
+    '- Activity scenes: say what the place is and how close it is; the rating may back it up. Start each one differently.',
+    '- Experiences scene: name one or two of the offers with their prices.',
+    '- Stay scene: what is on, or what weather to expect, while the guest is there.',
+    '- The first line hooks and the last line invites. They have no facts, so no numbers in them.',
+    'Hard rules:',
     '- Use only the facts listed for that scene. Never invent a name, number, price or time.',
-    '- Write numbers as digits and copy them exactly as given.',
-    '- The hook and outro scenes have no facts: no numbers in them.',
+    '- Describe a place only by the facts given; do not invent details about it.',
+    '- Write numbers as digits and copy them exactly as given. Keep names exactly as given.',
     '- Never say "open now", "right now", "today", "tonight" or "this evening".',
-    `- At most ${MAX_WORDS_PER_LINE} words per line, about ${wordBudget} words in total.`,
+    '- No hashtags, no emoji, no symbols.',
+    `- At most ${wordsPerLine(sceneCount, wordBudget)} words per line, about ${wordBudget} words in total. Shorter is better.`,
   ].join('\n');
 }
 
@@ -121,9 +143,7 @@ function templateLine(scene: PlannedScene, facts: ReadonlyMap<string, Fact>, pla
     return `Step outside in ${place.city}.`;
   }
   if (fact?.kind === 'place') {
-    const label = travelLabel(fact.distanceM);
-    const minutes = label.replace(/\D+/g, '');
-    return `${fact.name} is rated ${fact.rating}, about ${minutes} minutes ${label.endsWith('walk') ? 'on foot' : 'by car'}.`;
+    return `${fact.name} is rated ${fact.rating}, ${spokenTravel(fact.distanceM)}.`;
   }
   if (fact?.kind === 'experience') {
     return `Experiences nearby start from ${formatPrice(fact.amount, fact.currency)}.`;

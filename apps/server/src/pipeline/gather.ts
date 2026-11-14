@@ -28,6 +28,8 @@ export interface GatherContext {
   place: NormalizedPlace;
   window: TripWindow;
   interests: readonly InterestId[];
+  /** The currency the listing is shown in, when the page told us. */
+  currency?: string;
 }
 
 /**
@@ -97,10 +99,12 @@ export async function gather(
   onStage: (update: StageUpdate) => void,
 ): Promise<Gathered> {
   const { place, window } = ctx;
-  const area = { city: place.city, country: place.country, window };
+  const area = { city: place.city, country: place.country };
   const [places, experiences, events, weather] = await Promise.all([
     gatherPlaces(deps, ctx, onStage),
-    guarded(deps, 'experiences', [], () => deps.sources.experiences(deps, { ...area, interests: [...ctx.interests] })),
+    guarded(deps, 'experiences', [], () =>
+      deps.sources.experiences(deps, { ...area, ...(ctx.currency ? { currency: ctx.currency } : {}) }),
+    ),
     guarded(deps, 'events', emptyResult<EventFact>(), () => deps.sources.events(deps, area)),
     guarded(deps, 'weather', emptyResult<WeatherFact>(), () =>
       deps.sources.weather(deps, { lat: place.lat, lng: place.lng, window, today: deps.today() }),

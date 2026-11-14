@@ -1,11 +1,11 @@
-import type { InterestId, ListingContext, VideoManifest } from '@outside/shared';
+import type { InterestId, ListingContext, Source, VideoManifest } from '@outside/shared';
 import { mirrorImage } from '../media/mirror';
 import { resolveTripWindow } from '../sources/tripWindow';
 import { assembleManifest, sceneImageUrls } from './assemble';
 import { gather } from './gather';
 import { normalizePlace } from './normalize';
-import { scriptWithGuard, type Selection } from './script';
-import { MIN_PLACES, selectPlaces } from './select';
+import { planScenes, scriptWithGuard, type Selection } from './script';
+import { MIN_PLACES, selectEvents, selectExperiences, selectPlaces } from './select';
 import type { PipelineDeps, StageUpdate } from './types';
 import { voiceToFit } from './voiceFit';
 
@@ -33,6 +33,17 @@ async function mirrorImages(deps: PipelineDeps, urls: readonly string[]): Promis
   return new Map(urls.flatMap((url, index) => (paths[index] ? [[url, paths[index]] as const] : [])));
 }
 
+/** Only the sources whose facts made it into the video are cited. */
+function citedSources(sources: readonly Source[], sel: Selection): Source[] {
+  const planned = new Set(planScenes(sel).flatMap((scene) => scene.factIds));
+  const used = new Set(
+    [...sel.places, ...sel.experiences, ...sel.events, ...sel.weather]
+      .filter((fact) => planned.has(fact.id))
+      .map((fact) => fact.sourceId),
+  );
+  return sources.filter((source) => used.has(source.id));
+}
+
 /**
  * Listing in, playable manifest out: locate → gather → select → script → voice → assemble.
  * Throws NotEnoughDataError when the area cannot carry a video.
@@ -49,13 +60,24 @@ export async function runPipeline(
     throw new NotEnoughDataError();
   }
   const window = resolveTripWindow(listing, deps.today());
-  const gathered = await gather(deps, { place, window, interests }, onStage);
+  const gathered = await gather(
+    deps,
+    { place, window, interests, ...(listing.currency ? { currency: listing.currency } : {}) },
+    onStage,
+  );
 
   const places = selectPlaces(gathered.places, interests);
   if (places.length < MIN_PLACES) {
     throw new NotEnoughDataError();
   }
-  const selection: Selection = { place, window, places, experiences: gathered.experiences, events: gathered.events, weather: gathered.weather };
+  const selection: Selection = {
+    place,
+    window,
+    places,
+    experiences: selectExperiences(gathered.experiences, interests),
+    events: selectEvents(gathered.events, window),
+    weather: gathered.weather,
+  };
 
   onStage({ status: 'writing', stage: 'Writing the script', progress: 0.7 });
   const firstScript = await scriptWithGuard(deps.complete, selection, undefined, (reasons) =>
@@ -78,6 +100,6 @@ export async function runPipeline(
     timings: voiced.timings,
     audioUrl,
     images,
-    sources: gathered.sources,
+    sources: citedSources(gathered.sources, voiced.sel),
   });
 }

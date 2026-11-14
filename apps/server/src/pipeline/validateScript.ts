@@ -37,7 +37,7 @@ function allowedNumbers(fact: Fact): number[] {
     case 'experience':
       return [fact.amount, ...(fact.rating === undefined ? [] : [fact.rating]), ...numbersIn(fact.title), ...numbersIn(fact.durationText)];
     case 'event':
-      return [...numbersIn(fact.title), ...numbersIn(fact.dateText)];
+      return [...numbersIn(fact.title), ...numbersIn(fact.dateText), ...numbersIn(fact.venue)];
     case 'weather':
       return [fact.tempMinC, fact.tempMaxC, fact.precipitationChance];
   }

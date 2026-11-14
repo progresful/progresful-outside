@@ -1,29 +1,20 @@
-import type { EventFact, ExperienceFact, InterestId, PlaceFact, VideoStatus, WeatherFact } from '@outside/shared';
+import type { EventFact, ExperienceFact, PlaceFact, VideoStatus, WeatherFact } from '@outside/shared';
 import type { MediaStore } from '../media/mediaStore';
+import type { EventsParams } from '../sources/events';
+import type { ExperiencesParams } from '../sources/experiences';
 import type { PlacesParams } from '../sources/places';
-import type { TripWindow } from '../sources/tripWindow';
 import type { SourceDeps, SourceResult } from '../sources/types';
 import type { WeatherParams } from '../sources/weather';
 import type { Complete } from './script';
 import type { Speech } from './voice';
 
+export type { EventsParams } from '../sources/events';
+export type { ExperiencesParams } from '../sources/experiences';
+
 export interface StageUpdate {
   status: VideoStatus;
   stage: string;
   progress: number;
-}
-
-export interface ExperiencesParams {
-  city: string;
-  country: string;
-  interests: InterestId[];
-  window: TripWindow;
-}
-
-export interface EventsParams {
-  city: string;
-  country: string;
-  window: TripWindow;
 }
 
 /** The live-web sources a video is gathered from. Injected so the runner can be tested without the network. */

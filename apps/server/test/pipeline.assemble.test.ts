@@ -90,6 +90,13 @@ describe('assembleManifest', () => {
     });
   });
 
+  it('names the venue of the event when it is known', () => {
+    const concert = { ...christmasMarket, title: 'Bryan Adams', dateText: '20 November', venue: 'MEO Arena, Lisbon, Portugal' };
+    const stay = assembleManifest(input(selection({ events: [concert] }))).scenes.find((scene) => scene.type === 'stay');
+
+    expect(stay?.subtitle).toBe('Bryan Adams · MEO Arena · 20 November');
+  });
+
   it('describes the event for the stay', () => {
     expect(byType('stay')[0]).toMatchObject({ title: 'During your stay', subtitle: 'Christmas market · 12–24 Dec' });
   });

@@ -1,19 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../src/config';
 
-const fullEnv = {
+const secrets = {
   CONTEXT_DEV_API_KEY: 'ctx',
   OPENAI_API_KEY: 'oai',
-  OPENAI_MODEL: 'some-model',
   ELEVENLABS_API_KEY: 'el',
-  ELEVENLABS_VOICE_ID: 'voice',
 };
+const fullEnv = { ...secrets, OPENAI_MODEL: 'some-model', ELEVENLABS_VOICE_ID: 'voice' };
 
 describe('loadConfig', () => {
   it('names every missing key', () => {
-    expect(() => loadConfig({})).toThrow(
-      /CONTEXT_DEV_API_KEY.*OPENAI_API_KEY.*OPENAI_MODEL.*ELEVENLABS_API_KEY.*ELEVENLABS_VOICE_ID/s,
-    );
+    expect(() => loadConfig({})).toThrow(/CONTEXT_DEV_API_KEY.*OPENAI_API_KEY.*ELEVENLABS_API_KEY/s);
+  });
+
+  it('needs only the three secrets: the model and the voice have defaults', () => {
+    expect(loadConfig(secrets)).toMatchObject({
+      openaiModel: 'gpt-6-sol',
+      openaiReasoningEffort: 'none',
+      elevenLabsVoiceId: 'JBFqnCBsd6RMkjVDRZzb',
+      contextDevRequestsPerMinute: 10,
+    });
+  });
+
+  it('sends no reasoning effort with a model of your own unless you set one', () => {
+    expect(loadConfig(fullEnv).openaiReasoningEffort).toBeUndefined();
+    expect(loadConfig({ ...fullEnv, OPENAI_REASONING_EFFORT: 'low' }).openaiReasoningEffort).toBe('low');
+  });
+
+  it('reads and checks the Context.dev requests-per-minute allowance', () => {
+    expect(loadConfig({ ...secrets, CONTEXT_DEV_RPM: '60' }).contextDevRequestsPerMinute).toBe(60);
+    expect(() => loadConfig({ ...secrets, CONTEXT_DEV_RPM: '0' })).toThrow(/CONTEXT_DEV_RPM/);
+    expect(() => loadConfig({ ...secrets, CONTEXT_DEV_RPM: 'fast' })).toThrow(/CONTEXT_DEV_RPM/);
   });
 
   it('treats an empty value as missing', () => {
@@ -28,6 +45,7 @@ describe('loadConfig', () => {
       elevenLabsApiKey: 'el',
       elevenLabsVoiceId: 'voice',
       elevenLabsModelId: 'eleven_flash_v2_5',
+      contextDevRequestsPerMinute: 10,
       port: 8787,
       dataDir: './data',
       fixtureMode: 'off',

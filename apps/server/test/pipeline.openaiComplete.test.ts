@@ -29,6 +29,16 @@ describe('createOpenAiComplete', () => {
     expect(init.signal).toBeInstanceOf(AbortSignal);
   });
 
+  it('sends the reasoning effort when one is configured', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(completion('{"lines":["a"]}')));
+    const complete = createOpenAiComplete({ apiKey: 'sk', model: 'm', reasoningEffort: 'none', fetch: fetchMock });
+
+    await complete('s', 'u', schema);
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toMatchObject({ model: 'm', reasoning_effort: 'none' });
+  });
+
   it.each([
     ['a failed request', jsonResponse({ error: { message: 'bad key' } }, 401)],
     ['a refusal', jsonResponse(completion(null, 'I cannot help with that'))],

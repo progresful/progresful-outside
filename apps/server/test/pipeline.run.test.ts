@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CreditsExhaustedError } from '../src/contextdev/client';
 import { NotEnoughDataError, TEMPLATE_VERSION, runPipeline, type StageUpdate } from '../src/pipeline/run';
 import { alignFor, listing, memoryStore, pipelineDeps, source } from './fixtures/pipelineDeps';
-import { placeFact } from './fixtures/selection';
+import { christmasMarket, placeFact, tour } from './fixtures/selection';
 
 const input = { videoId: 'abcdef0123456789', listing, interests: ['food', 'culture', 'nature'] as const };
 const request = { ...input, interests: [...input.interests] };
@@ -59,11 +59,44 @@ describe('runPipeline', () => {
     await runPipeline(deps, request, () => {});
 
     const window = { start: '2026-12-12', end: '2026-12-16', fromListing: true };
-    expect(deps.sources.events).toHaveBeenCalledWith(expect.anything(), { city: 'Lisbon', country: 'Portugal', window });
+    expect(deps.sources.events).toHaveBeenCalledWith(expect.anything(), { city: 'Lisbon', country: 'Portugal' });
     expect(deps.sources.weather).toHaveBeenCalledWith(
       expect.anything(),
       { lat: 38.7223, lng: -9.1393, window, today: '2026-11-14' },
     );
+  });
+
+  it('asks the marketplaces for prices in the currency the listing is shown in', async () => {
+    const deps = pipelineDeps();
+
+    await runPipeline(deps, { ...request, listing: { ...listing, currency: 'GBP' } }, () => {});
+
+    expect(deps.sources.experiences).toHaveBeenCalledWith(expect.anything(), { city: 'Lisbon', country: 'Portugal', currency: 'GBP' });
+  });
+
+  it('shows an event only when it happens during the stay', async () => {
+    const base = pipelineDeps();
+    const later = { ...christmasMarket, startDate: '2027-01-10', endDate: '2027-01-12' };
+    const deps = { ...base, sources: { ...base.sources, events: vi.fn(async () => ({ facts: [later], source: source('songkick', 'Songkick') })) } };
+
+    const manifest = await runPipeline(deps, request, () => {});
+
+    // With no event in the stay, the stay scene falls back to the weather.
+    expect(manifest.scenes.find((scene) => scene.type === 'stay')?.subtitle).toContain('°C');
+    expect(manifest.sources.map((entry) => entry.label)).not.toContain('Songkick');
+  });
+
+  it('shows at most three experiences, chosen for the interests', async () => {
+    const base = pipelineDeps();
+    const prices = { 'Food Tour': 50, 'Museum Tickets': 40, 'Hiking Day Trip': 30, 'Bus Tour': 5, 'Quad Ride': 6 };
+    const offers = Object.entries(prices).map(([title, amount]) => ({ ...tour, id: `exp:${title}`, title, amount }));
+    const deps = { ...base, sources: { ...base.sources, experiences: vi.fn(async () => [{ facts: offers, source: source('viator', 'Viator') }]) } };
+
+    const manifest = await runPipeline(deps, request, () => {});
+
+    const shown = manifest.scenes.find((scene) => scene.type === 'experiences')?.items?.map((item) => item.title);
+    // The cheapest two match none of food, museums or nature; the three that do are listed cheapest first.
+    expect(shown).toEqual(['Hiking Day Trip', 'Museum Tickets', 'Food Tour']);
   });
 
   it('still succeeds when experiences and events throw', async () => {
@@ -148,7 +181,7 @@ describe('runPipeline', () => {
     expect(types(manifest).filter((type) => type === 'activity')).toHaveLength(2);
     expect(manifest.durationInFrames).toBeLessThanOrEqual(900);
     const systems = vi.mocked(deps.complete).mock.calls.map((call) => call[0]);
-    expect(systems.some((system) => system.includes('about 40 words'))).toBe(true);
+    expect(systems.some((system) => system.includes('about 45 words'))).toBe(true);
   });
 
   it('fails when the video cannot be made to fit', async () => {

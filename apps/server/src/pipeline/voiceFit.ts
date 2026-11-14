@@ -4,7 +4,7 @@ import { MAX_FRAMES, sceneTimings, silentTimings, totalFrames, type SceneTiming 
 import type { PipelineDeps } from './types';
 
 /** The word budget for a second, shorter script when the first one runs past 30 seconds. */
-export const TIGHT_WORD_BUDGET = 40;
+export const TIGHT_WORD_BUDGET = 45;
 
 export interface Voiced {
   sel: Selection;

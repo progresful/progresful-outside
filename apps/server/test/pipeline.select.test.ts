@@ -1,6 +1,6 @@
-import type { InterestId, PlaceFact } from '@outside/shared';
+import type { EventFact, ExperienceFact, InterestId, PlaceFact } from '@outside/shared';
 import { describe, expect, it } from 'vitest';
-import { MIN_PLACES, scorePlace, selectPlaces, travelLabel } from '../src/pipeline/select';
+import { MIN_PLACES, scorePlace, selectEvents, selectExperiences, selectPlaces, travelLabel } from '../src/pipeline/select';
 
 function place(id: string, interest: InterestId, overrides: Partial<PlaceFact> = {}): PlaceFact {
   return {
@@ -138,5 +138,121 @@ describe('travelLabel', () => {
 
   it('never says zero minutes', () => {
     expect(travelLabel(0)).toBe('≈ 1 min walk');
+  });
+});
+
+describe('selectExperiences', () => {
+  function offer(title: string, overrides: Partial<ExperienceFact> = {}): ExperienceFact {
+    return {
+      id: `exp:test:${title}`,
+      kind: 'experience',
+      title,
+      amount: 50,
+      currency: 'EUR',
+      rating: 4.8,
+      reviewCount: 500,
+      url: `https://www.viator.com/tours/${encodeURIComponent(title)}`,
+      sourceId: 'viator',
+      ...overrides,
+    };
+  }
+  const titles = (offers: ExperienceFact[]): string[] => offers.map((entry) => entry.title);
+
+  it('picks the best offer for each interest in the order the user chose them', () => {
+    const offers = [
+      offer('Sintra Day Trip', { reviewCount: 20_000 }),
+      offer('Sunset Boat Cruise', { reviewCount: 900 }),
+      offer('Food and Wine Walking Tour', { reviewCount: 5_000 }),
+      offer('Pastel de Nata Baking Class', { reviewCount: 3_000 }),
+      offer('Museum Tickets with Audio Guide', { reviewCount: 100 }),
+    ];
+
+    expect(titles(selectExperiences(offers, ['water', 'culture', 'food']))).toEqual([
+      'Sunset Boat Cruise',
+      'Museum Tickets with Audio Guide',
+      'Food and Wine Walking Tour',
+    ]);
+  });
+
+  it('fills the remaining places with the best-reviewed offers', () => {
+    const offers = [
+      offer('Sintra Day Trip', { reviewCount: 20_000 }),
+      offer('Fado Show', { reviewCount: 7_000 }),
+      offer('Pub Crawl', { reviewCount: 300 }),
+      offer('City Bus Tour', { reviewCount: 60 }),
+    ];
+
+    expect(titles(selectExperiences(offers, ['nightlife']))).toEqual(['Pub Crawl', 'Sintra Day Trip', 'Fado Show']);
+  });
+
+  it('matches whole words only', () => {
+    // "art" must not match "party", nor "spa" match "Spain".
+    const offers = [offer('Boat Party in Spain', { reviewCount: 9_000 }), offer('Street Art Tour', { reviewCount: 80 })];
+
+    expect(titles(selectExperiences(offers, ['culture', 'wellness'])).slice(0, 1)).toEqual(['Street Art Tour']);
+  });
+
+  it('drops offers that are poorly rated, barely reviewed or unrated', () => {
+    const offers = [
+      offer('Low', { rating: 4.1 }),
+      offer('Thin', { reviewCount: 5 }),
+      offer('Unrated', { rating: undefined, reviewCount: undefined }),
+      offer('Good'),
+    ];
+
+    expect(titles(selectExperiences(offers, ['food']))).toEqual(['Good']);
+  });
+
+  it('shows the same tour once when two marketplaces list it', () => {
+    const offers = [
+      offer('Lisbon: Food & Wine Tour', { sourceId: 'getyourguide', reviewCount: 100 }),
+      offer('Lisbon Food and Wine Tour', { reviewCount: 900 }),
+      offer('Tile Workshop'),
+    ];
+
+    expect(titles(selectExperiences(offers, ['food']))).toEqual(['Lisbon Food and Wine Tour', 'Tile Workshop']);
+  });
+
+  it('returns at most three', () => {
+    const offers = ['A', 'B', 'C', 'D', 'E'].map((title) => offer(title));
+
+    expect(selectExperiences(offers, [])).toHaveLength(3);
+  });
+});
+
+describe('selectEvents', () => {
+  const stay = { start: '2026-12-12', end: '2026-12-16', fromListing: true };
+  function event(id: string, startDate?: string, endDate?: string): EventFact {
+    return {
+      id: `event:${id}`,
+      kind: 'event',
+      title: id,
+      dateText: 'x',
+      ...(startDate ? { startDate } : {}),
+      ...(endDate ? { endDate } : {}),
+      url: `https://www.songkick.com/concerts/${id}`,
+      sourceId: 'songkick',
+    };
+  }
+  const ids = (events: EventFact[]): string[] => events.map((entry) => entry.title);
+
+  it('keeps events that happen during the stay, soonest first', () => {
+    const events = [
+      event('after', '2026-12-17'),
+      event('last-day', '2026-12-16'),
+      event('before', '2026-12-11'),
+      event('first-day', '2026-12-12'),
+    ];
+
+    expect(ids(selectEvents(events, stay))).toEqual(['first-day', 'last-day']);
+  });
+
+  it('keeps a festival that overlaps the stay', () => {
+    expect(ids(selectEvents([event('festival', '2026-12-10', '2026-12-13')], stay))).toEqual(['festival']);
+    expect(ids(selectEvents([event('over', '2026-12-01', '2026-12-11')], stay))).toEqual([]);
+  });
+
+  it('leaves out events without a known date', () => {
+    expect(selectEvents([event('undated')], stay)).toEqual([]);
   });
 });

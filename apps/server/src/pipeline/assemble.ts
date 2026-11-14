@@ -7,6 +7,7 @@ import {
   type Source,
   type VideoManifest,
 } from '@outside/shared';
+import { venueName } from '../sources/events';
 import { formatPrice } from '../sources/price';
 import { factMap, planScenes, type Selection, type StoryScene } from './script';
 import { travelLabel } from './select';
@@ -59,7 +60,7 @@ export function sceneImageUrls(listing: ListingContext, sel: Selection): string[
 
 function stayText(fact: Fact | undefined): string | undefined {
   if (fact?.kind === 'event') {
-    return `${fact.title} · ${fact.dateText}`;
+    return [fact.title, venueName(fact.venue), fact.dateText].filter((part) => part !== undefined).join(' · ');
   }
   if (fact?.kind === 'weather') {
     return `${fact.tempMinC}–${fact.tempMaxC} °C, ${fact.precipitationChance}% chance of rain`;

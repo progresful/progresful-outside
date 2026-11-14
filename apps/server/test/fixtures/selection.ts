@@ -43,6 +43,8 @@ export const tour: ExperienceFact = {
   amount: 45,
   currency: 'EUR',
   durationText: '3 hours',
+  rating: 4.8,
+  reviewCount: 1200,
   url: 'https://www.getyourguide.com/lisbon/tour',
   imageUrl: 'https://cdn.getyourguide.com/img/tour.jpg',
   sourceId: 'getyourguide',
@@ -53,6 +55,8 @@ export const cruise: ExperienceFact = {
   title: 'Sunset cruise',
   amount: 30,
   currency: 'EUR',
+  rating: 4.6,
+  reviewCount: 300,
   url: 'https://www.getyourguide.com/lisbon/cruise',
   sourceId: 'getyourguide',
 };
@@ -62,6 +66,8 @@ export const christmasMarket: EventFact = {
   kind: 'event',
   title: 'Christmas market',
   dateText: '12–24 Dec',
+  startDate: '2026-12-12',
+  endDate: '2026-12-24',
   url: 'https://example.com/events/market',
   sourceId: 'events',
 };

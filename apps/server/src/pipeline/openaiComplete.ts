@@ -13,6 +13,8 @@ const CompletionSchema = z.object({
 export interface OpenAiCompleteOptions {
   apiKey: string;
   model: string;
+  /** Sent as `reasoning_effort`; left out when not set, since not every model accepts it. */
+  reasoningEffort?: string;
   fetch?: typeof fetch;
 }
 
@@ -31,6 +33,7 @@ export function createOpenAiComplete(options: OpenAiCompleteOptions): Complete {
           { role: 'user', content: user },
         ],
         response_format: { type: 'json_schema', json_schema: { name: 'voiceover_lines', strict: true, schema: jsonSchema } },
+        ...(options.reasoningEffort ? { reasoning_effort: options.reasoningEffort } : {}),
       }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });

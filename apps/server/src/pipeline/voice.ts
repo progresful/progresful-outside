@@ -3,6 +3,8 @@ import { z } from 'zod';
 const ELEVENLABS_TTS_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
 const OUTPUT_FORMAT = 'mp3_44100_128';
 const TIMEOUT_MS = 20_000;
+/** A touch faster than the voice's default, so a seven-scene script stays inside 30 seconds and sounds lively. */
+const SPEECH_SPEED = 1.1;
 
 const AlignmentSchema = z.object({
   characters: z.array(z.string()),
@@ -39,7 +41,7 @@ export async function synthesize(deps: VoiceDeps, lines: readonly string[]): Pro
   const res = await deps.fetch(url, {
     method: 'POST',
     headers: { 'xi-api-key': deps.apiKey, 'content-type': 'application/json' },
-    body: JSON.stringify({ text: lines.join('\n'), model_id: deps.modelId }),
+    body: JSON.stringify({ text: lines.join('\n'), model_id: deps.modelId, voice_settings: { speed: SPEECH_SPEED } }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) {

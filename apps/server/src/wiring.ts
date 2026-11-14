@@ -10,8 +10,9 @@ import { createDiskMediaStore } from './media/mediaStore';
 import { createOpenAiComplete } from './pipeline/openaiComplete';
 import { runPipeline, type PipelineDeps, type PipelineSources } from './pipeline/run';
 import { synthesize } from './pipeline/voice';
+import { fetchEvents } from './sources/events';
+import { fetchExperiences } from './sources/experiences';
 import { fetchPlaces } from './sources/places';
-import { emptyResult } from './sources/types';
 import { fetchWeather } from './sources/weather';
 
 const SWEEP_INTERVAL_MS = 10 * 60 * 1000;
@@ -22,17 +23,9 @@ export interface Runtime {
   startSweeper(onError: (error: unknown) => void): void;
 }
 
-/**
- * The live-web sources in use. Experiences and events answer with nothing until their adapters
- * land (plan tasks 9 and 10, which wait on the source spike); the pipeline already copes with that.
- */
+/** The live-web sources in use. */
 function liveSources(): PipelineSources {
-  return {
-    places: fetchPlaces,
-    experiences: async () => [],
-    events: async () => emptyResult(),
-    weather: fetchWeather,
-  };
+  return { places: fetchPlaces, experiences: fetchExperiences, events: fetchEvents, weather: fetchWeather };
 }
 
 /** Builds every real dependency from the configuration. `onSourceError` receives skipped-source failures. */
@@ -45,6 +38,7 @@ export function createRuntime(config: Config, onSourceError: (sourceId: string, 
   const pipelineDeps: PipelineDeps = {
     client: createContextDevClient({
       apiKey: config.contextDevApiKey,
+      maxPerMinute: config.contextDevRequestsPerMinute,
       fixtures: { mode: config.fixtureMode, dir: join(config.dataDir, 'fixtures') },
     }),
     cache,
@@ -53,7 +47,11 @@ export function createRuntime(config: Config, onSourceError: (sourceId: string, 
     fetch,
     onSourceError,
     sources: liveSources(),
-    complete: createOpenAiComplete({ apiKey: config.openaiApiKey, model: config.openaiModel }),
+    complete: createOpenAiComplete({
+      apiKey: config.openaiApiKey,
+      model: config.openaiModel,
+      ...(config.openaiReasoningEffort ? { reasoningEffort: config.openaiReasoningEffort } : {}),
+    }),
     synthesize: (lines) =>
       synthesize(
         { fetch, apiKey: config.elevenLabsApiKey, voiceId: config.elevenLabsVoiceId, modelId: config.elevenLabsModelId },

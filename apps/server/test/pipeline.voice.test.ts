@@ -27,7 +27,11 @@ describe('synthesize', () => {
     );
     expect(init.method).toBe('POST');
     expect(new Headers(init.headers).get('xi-api-key')).toBe('el-key');
-    expect(JSON.parse(String(init.body))).toEqual({ text: 'Step outside.\nFood first.', model_id: 'eleven_flash_v2_5' });
+    expect(JSON.parse(String(init.body))).toEqual({
+      text: 'Step outside.\nFood first.',
+      model_id: 'eleven_flash_v2_5',
+      voice_settings: { speed: 1.1 },
+    });
     expect(result.audio.equals(audioBytes)).toBe(true);
     expect(result.alignment).toEqual(alignment);
   });
