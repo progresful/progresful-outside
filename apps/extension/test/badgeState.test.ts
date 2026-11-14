@@ -1,6 +1,6 @@
 import type { ApiResult, VideoStatus, VideoStatusResponse } from '@outside/shared';
 import { describe, expect, it } from 'vitest';
-import { nextBadgeState, type BadgeEvent, type BadgeState } from '../src/badge/badgeState';
+import { FIRST_STAGE, nextBadgeState, type BadgeEvent, type BadgeState } from '../src/badge/badgeState';
 
 function status(videoId: string, value: VideoStatus, stage = 'Checking live prices'): BadgeEvent {
   const res: ApiResult<VideoStatusResponse> = { success: true, data: { status: value, stage, progress: 0.5 }, error: null };
@@ -34,9 +34,13 @@ describe('nextBadgeState', () => {
     expect(nextBadgeState(generating, failure('new', 'Not found'))).toEqual({ kind: 'error' });
   });
 
-  it('hides when the server is unreachable', () => {
-    expect(nextBadgeState(generating, { type: 'unreachable' })).toEqual({ kind: 'hidden' });
-    expect(nextBadgeState(ready, failure('old', 'unreachable'))).toEqual({ kind: 'hidden' });
+  it('says so when the server is unreachable, rather than vanishing', () => {
+    expect(nextBadgeState(generating, { type: 'unreachable' })).toEqual({ kind: 'offline' });
+    expect(nextBadgeState(ready, failure('old', 'unreachable'))).toEqual({ kind: 'offline' });
+  });
+
+  it('starts building again when retried from offline', () => {
+    expect(nextBadgeState({ kind: 'offline' }, { type: 'restart' })).toEqual({ kind: 'generating', stage: FIRST_STAGE });
   });
 
   it('keeps the old video playable while refreshing', () => {

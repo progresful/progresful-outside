@@ -43,6 +43,8 @@ export function statusCardFor(input: CardInput): CardModel {
     case 'ready':
       return { title: 'Video ready', subtitle: input.locationText ?? '', action: 'play' };
     case 'error':
+    case 'offline':
+      // Offline only reaches here once the server answers again: the page still needs its retry.
       return { title: "Couldn't build video", subtitle: 'Try again.', action: 'retry' };
   }
 }

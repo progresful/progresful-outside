@@ -102,7 +102,7 @@ describe('listing session', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('hides and stops polling when the server is unreachable', async () => {
+  it('shows offline and stops polling when the server is unreachable', async () => {
     const replies = [created('v1'), UNREACHABLE];
     const h = harness(async () => replies.shift());
 
@@ -110,17 +110,17 @@ describe('listing session', () => {
     await flush();
     await vi.advanceTimersByTimeAsync(POLL_MS);
 
-    expect(h.states().at(-1)).toEqual({ kind: 'hidden' });
+    expect(h.states().at(-1)).toEqual({ kind: 'offline' });
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('hides when the background worker does not answer at all', async () => {
+  it('shows offline when the background worker does not answer at all', async () => {
     const h = harness(async () => undefined);
 
     createListingSession(h.deps).start(listing('1'));
     await flush();
 
-    expect(h.states().at(-1)).toEqual({ kind: 'hidden' });
+    expect(h.states().at(-1)).toEqual({ kind: 'offline' });
   });
 
   it('ignores a late reply after stop and leaves no timer running', async () => {

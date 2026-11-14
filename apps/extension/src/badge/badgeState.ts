@@ -5,7 +5,9 @@ export type BadgeState =
   | { kind: 'generating'; stage: string }
   | { kind: 'ready'; videoId: string }
   | { kind: 'refreshing'; videoId: string }
-  | { kind: 'error' };
+  | { kind: 'error' }
+  /** The local server did not answer. Shown, not hidden: a badge that vanishes looks like a broken extension. */
+  | { kind: 'offline' };
 
 export type BadgeEvent =
   | { type: 'status'; videoId: string; res: ApiResult<VideoStatusResponse> }
@@ -24,7 +26,7 @@ export function isBuilding(status: VideoStatus): boolean {
 
 function afterStatus(prev: BadgeState, videoId: string, res: ApiResult<VideoStatusResponse>): BadgeState {
   if (!res.success) {
-    return res.error === UNREACHABLE ? { kind: 'hidden' } : { kind: 'error' };
+    return res.error === UNREACHABLE ? { kind: 'offline' } : { kind: 'error' };
   }
   if (res.data.status === 'ready') {
     return { kind: 'ready', videoId };
@@ -40,7 +42,7 @@ function afterStatus(prev: BadgeState, videoId: string, res: ApiResult<VideoStat
 export function nextBadgeState(prev: BadgeState, event: BadgeEvent): BadgeState {
   switch (event.type) {
     case 'unreachable':
-      return { kind: 'hidden' };
+      return { kind: 'offline' };
     case 'restart':
       return prev.kind === 'ready' || prev.kind === 'refreshing'
         ? { kind: 'refreshing', videoId: prev.videoId }

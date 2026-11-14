@@ -88,6 +88,19 @@ describe('mountBadge', () => {
     expect(h.onRetry).toHaveBeenCalledTimes(1);
   });
 
+  it('says the server is not running and offers a retry when offline', () => {
+    const h = handlers();
+    const badge = mountBadge(document, gallery(), h);
+
+    badge.render({ kind: 'offline' });
+    shadow().querySelector('button')?.click();
+
+    expect(shadow().textContent).toContain('Server not running');
+    expect(shadow().querySelector('button')?.textContent).toBe('Retry');
+    expect(h.onRetry).toHaveBeenCalledTimes(1);
+    expect((document.querySelector(BADGE_TAG) as HTMLElement).style.display).toBe('block');
+  });
+
   it('shows nothing when hidden', () => {
     const badge = mountBadge(document, gallery(), handlers());
 

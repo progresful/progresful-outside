@@ -58,6 +58,12 @@ describe('statusCardFor', () => {
     expect(statusCardFor({ firstRun: true, onListing: false, serverUp: false }).title).toBe("Can't reach the server");
   });
 
+  it('offers a retry when the page lost the server and it is back', () => {
+    const card = statusCardFor({ firstRun: false, onListing: true, serverUp: true, badge: { kind: 'offline' } });
+
+    expect([card.title, card.action]).toEqual(["Couldn't build video", 'retry']);
+  });
+
   it('treats a listing page whose badge is hidden as no listing', () => {
     expect(statusCardFor({ firstRun: false, onListing: true, serverUp: true, badge: { kind: 'hidden' } }).title).toBe('No listing in this tab');
   });

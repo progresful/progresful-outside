@@ -57,7 +57,28 @@ function PlayDot() {
   );
 }
 
-/** The pill on the listing's gallery. Copy and layout follow the approved mocks exactly. */
+interface ProblemProps {
+  text: string;
+  onRetry: () => void;
+}
+
+/** The pill when there is no video to play: what went wrong, and a way to try again. */
+function Problem({ text, onRetry }: ProblemProps) {
+  return (
+    <div role="status" style={{ ...pill, gap: 4, padding: '0 6px 0 20px' }}>
+      <span style={{ fontSize: 14, fontWeight: 600 }}>{text}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        style={{ height: 44, padding: '0 14px', border: 0, borderRadius: 22, background: 'none', color: COLOR.accent, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+/** The pill on the listing's gallery. Copy and layout follow the approved mocks; the offline pill reuses the error layout. */
 export function Badge({ state, onPlay, onRetry }: BadgeProps) {
   switch (state.kind) {
     case 'hidden':
@@ -92,17 +113,8 @@ export function Badge({ state, onPlay, onRetry }: BadgeProps) {
         </button>
       );
     case 'error':
-      return (
-        <div role="status" style={{ ...pill, gap: 4, padding: '0 6px 0 20px' }}>
-          <span style={{ fontSize: 14, fontWeight: 600 }}>Couldn&apos;t build video</span>
-          <button
-            type="button"
-            onClick={onRetry}
-            style={{ height: 44, padding: '0 14px', border: 0, borderRadius: 22, background: 'none', color: COLOR.accent, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-          >
-            Retry
-          </button>
-        </div>
-      );
+      return <Problem text="Couldn't build video" onRetry={onRetry} />;
+    case 'offline':
+      return <Problem text="Server not running" onRetry={onRetry} />;
   }
 }
