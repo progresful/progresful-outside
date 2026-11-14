@@ -1,6 +1,17 @@
+import { z } from 'zod';
 import type { LatLng } from './types';
 
 const EARTH_RADIUS_M = 6_371_000;
+
+/** A number, or a numeric string. Null and blank are not numbers. */
+export const NumericSchema = z.union([
+  z.number(),
+  z
+    .string()
+    .trim()
+    .regex(/^-?\d+(\.\d+)?$/)
+    .transform(Number),
+]);
 
 /** Rounds to two decimals (about 1 km), so nearby listings share cached scrapes. */
 export function round2(value: number): number {

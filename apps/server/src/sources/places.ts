@@ -3,35 +3,34 @@ import tzlookup from 'tz-lookup';
 import { z } from 'zod';
 import { scrapeKey } from '../cache/keys';
 import { CreditsExhaustedError, realFetchedAt } from '../contextdev/client';
-import { haversineM, round2 } from './geo';
+import { NumericSchema, haversineM, round2 } from './geo';
 import { emptyResult, type LatLng, type SourceDeps, type SourceResult } from './types';
 
 export { haversineM } from './geo';
 
 const MAPS_SEARCH = 'https://www.google.com/maps/search/';
 
-/** A number, or a numeric string. Null and blank are not numbers. */
-const Numeric = z.union([
-  z.number(),
-  z
-    .string()
-    .trim()
-    .regex(/^-?\d+(\.\d+)?$/)
-    .transform(Number),
-]);
-
 /** The fields we use from Context.dev's prebuilt google-maps parser. */
 const RawPlaceSchema = z.object({
   place_id: z.string().min(1),
   name: z.string().min(1),
-  rating: Numeric.refine((value) => value > 0),
-  number_of_reviews: Numeric.nullish().transform((value) => value ?? 0),
-  latitude: Numeric,
-  longitude: Numeric,
+  rating: NumericSchema.refine((value) => value > 0),
+  number_of_reviews: NumericSchema.nullish().transform((value) => value ?? 0),
+  latitude: NumericSchema,
+  longitude: NumericSchema,
   google_image: z.url(),
 });
 
-const ResultsSchema = z.object({ results: z.array(z.unknown()) });
+export const MapsResultsSchema = z.object({ results: z.array(z.unknown()) });
+
+/** A Maps search for free text, read with Context.dev's prebuilt google-maps parser. */
+export function mapsSearchRequest(searchText: string): Record<string, unknown> & { url: string } {
+  return {
+    url: `${MAPS_SEARCH}${encodeURIComponent(searchText)}`,
+    formats: { parse: true },
+    parseParams: { type: 'prebuilt', parser: 'google-maps' },
+  };
+}
 
 export interface PlacesParams {
   interest: InterestId;
@@ -40,7 +39,7 @@ export interface PlacesParams {
 }
 
 export function placesUrl(query: string, locationText: string): string {
-  return `${MAPS_SEARCH}${encodeURIComponent(`${query} near ${locationText}`)}`;
+  return mapsSearchRequest(`${query} near ${locationText}`).url;
 }
 
 function timezoneAt(point: LatLng): string | undefined {
@@ -91,13 +90,10 @@ async function scrapePlaces(
   key: string,
 ): Promise<SourceResult<PlaceFact>> {
   const query = interestById(p.interest).mapsQueries[0] ?? p.interest;
-  const url = placesUrl(query, p.locationText);
-  const res = await deps.client.scrape({
-    url,
-    formats: { parse: true },
-    parseParams: { type: 'prebuilt', parser: 'google-maps' },
-  });
-  const results = res.parsed.success === true ? ResultsSchema.safeParse(res.parsed.data) : null;
+  const request = mapsSearchRequest(`${query} near ${p.locationText}`);
+  const { url } = request;
+  const res = await deps.client.scrape(request);
+  const results = res.parsed.success === true ? MapsResultsSchema.safeParse(res.parsed.data) : null;
   if (!results?.success) {
     return emptyResult();
   }
