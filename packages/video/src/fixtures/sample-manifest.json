@@ -1,0 +1,433 @@
+{
+  "id": "sample0000000000",
+  "version": 1,
+  "fps": 30,
+  "width": 1280,
+  "height": 720,
+  "durationInFrames": 704,
+  "audioUrl": null,
+  "scenes": [
+    {
+      "type": "hook",
+      "startFrame": 0,
+      "durationInFrames": 56,
+      "title": "Around Lisbon",
+      "captions": [
+        {
+          "text": "Step",
+          "startSec": 0,
+          "endSec": 0.4
+        },
+        {
+          "text": "outside",
+          "startSec": 0.4,
+          "endSec": 0.8
+        },
+        {
+          "text": "in",
+          "startSec": 0.8,
+          "endSec": 1.2
+        },
+        {
+          "text": "Lisbon.",
+          "startSec": 1.2,
+          "endSec": 1.6
+        }
+      ],
+      "factIds": [],
+      "subtitle": "12–16 Dec"
+    },
+    {
+      "type": "activity",
+      "startFrame": 56,
+      "durationInFrames": 139,
+      "title": "Mercado da Ribeira",
+      "captions": [
+        {
+          "text": "Mercado",
+          "startSec": 1.85,
+          "endSec": 2.25
+        },
+        {
+          "text": "da",
+          "startSec": 2.25,
+          "endSec": 2.65
+        },
+        {
+          "text": "Ribeira",
+          "startSec": 2.65,
+          "endSec": 3.05
+        },
+        {
+          "text": "is",
+          "startSec": 3.05,
+          "endSec": 3.45
+        },
+        {
+          "text": "rated",
+          "startSec": 3.45,
+          "endSec": 3.85
+        },
+        {
+          "text": "4.5,",
+          "startSec": 3.85,
+          "endSec": 4.25
+        },
+        {
+          "text": "about",
+          "startSec": 4.25,
+          "endSec": 4.65
+        },
+        {
+          "text": "13",
+          "startSec": 4.65,
+          "endSec": 5.05
+        },
+        {
+          "text": "minutes",
+          "startSec": 5.05,
+          "endSec": 5.45
+        },
+        {
+          "text": "on",
+          "startSec": 5.45,
+          "endSec": 5.85
+        },
+        {
+          "text": "foot.",
+          "startSec": 5.85,
+          "endSec": 6.25
+        }
+      ],
+      "factIds": [],
+      "subtitle": "4.5 rating · ≈ 13 min walk",
+      "place": {
+        "hours": {
+          "0": [
+            {
+              "open": "00:00",
+              "close": "24:00"
+            }
+          ],
+          "1": [
+            {
+              "open": "00:00",
+              "close": "24:00"
+            }
+          ],
+          "2": [
+            {
+              "open": "00:00",
+              "close": "24:00"
+            }
+          ],
+          "3": [
+            {
+              "open": "00:00",
+              "close": "24:00"
+            }
+          ],
+          "4": [
+            {
+              "open": "00:00",
+              "close": "24:00"
+            }
+          ],
+          "5": [
+            {
+              "open": "00:00",
+              "close": "24:00"
+            }
+          ],
+          "6": [
+            {
+              "open": "00:00",
+              "close": "24:00"
+            }
+          ]
+        },
+        "timezone": "Europe/Lisbon"
+      }
+    },
+    {
+      "type": "activity",
+      "startFrame": 195,
+      "durationInFrames": 140,
+      "title": "Museu do Azulejo",
+      "captions": [
+        {
+          "text": "Museu",
+          "startSec": 6.5,
+          "endSec": 6.9
+        },
+        {
+          "text": "do",
+          "startSec": 6.9,
+          "endSec": 7.3
+        },
+        {
+          "text": "Azulejo",
+          "startSec": 7.3,
+          "endSec": 7.7
+        },
+        {
+          "text": "is",
+          "startSec": 7.7,
+          "endSec": 8.1
+        },
+        {
+          "text": "rated",
+          "startSec": 8.1,
+          "endSec": 8.5
+        },
+        {
+          "text": "4.7,",
+          "startSec": 8.5,
+          "endSec": 8.9
+        },
+        {
+          "text": "about",
+          "startSec": 8.9,
+          "endSec": 9.3
+        },
+        {
+          "text": "25",
+          "startSec": 9.3,
+          "endSec": 9.7
+        },
+        {
+          "text": "minutes",
+          "startSec": 9.7,
+          "endSec": 10.1
+        },
+        {
+          "text": "on",
+          "startSec": 10.1,
+          "endSec": 10.5
+        },
+        {
+          "text": "foot.",
+          "startSec": 10.5,
+          "endSec": 10.9
+        }
+      ],
+      "factIds": [],
+      "subtitle": "4.7 rating · ≈ 25 min walk"
+    },
+    {
+      "type": "activity",
+      "startFrame": 335,
+      "durationInFrames": 139,
+      "title": "Parque Eduardo VII",
+      "captions": [
+        {
+          "text": "Parque",
+          "startSec": 11.15,
+          "endSec": 11.55
+        },
+        {
+          "text": "Eduardo",
+          "startSec": 11.55,
+          "endSec": 11.95
+        },
+        {
+          "text": "VII",
+          "startSec": 11.95,
+          "endSec": 12.35
+        },
+        {
+          "text": "is",
+          "startSec": 12.35,
+          "endSec": 12.75
+        },
+        {
+          "text": "rated",
+          "startSec": 12.75,
+          "endSec": 13.15
+        },
+        {
+          "text": "4.6,",
+          "startSec": 13.15,
+          "endSec": 13.55
+        },
+        {
+          "text": "about",
+          "startSec": 13.55,
+          "endSec": 13.95
+        },
+        {
+          "text": "7",
+          "startSec": 13.95,
+          "endSec": 14.35
+        },
+        {
+          "text": "minutes",
+          "startSec": 14.35,
+          "endSec": 14.75
+        },
+        {
+          "text": "by",
+          "startSec": 14.75,
+          "endSec": 15.15
+        },
+        {
+          "text": "car.",
+          "startSec": 15.15,
+          "endSec": 15.55
+        }
+      ],
+      "factIds": [],
+      "subtitle": "4.6 rating · ≈ 7 min drive"
+    },
+    {
+      "type": "experiences",
+      "startFrame": 474,
+      "durationInFrames": 68,
+      "title": "Experiences nearby",
+      "captions": [
+        {
+          "text": "Experiences",
+          "startSec": 15.8,
+          "endSec": 16.2
+        },
+        {
+          "text": "nearby",
+          "startSec": 16.2,
+          "endSec": 16.6
+        },
+        {
+          "text": "start",
+          "startSec": 16.6,
+          "endSec": 17
+        },
+        {
+          "text": "from",
+          "startSec": 17,
+          "endSec": 17.4
+        },
+        {
+          "text": "€30.",
+          "startSec": 17.4,
+          "endSec": 17.8
+        }
+      ],
+      "factIds": [],
+      "items": [
+        {
+          "title": "Sunset cruise",
+          "detail": "from €30"
+        },
+        {
+          "title": "Alfama food tour",
+          "detail": "from €45"
+        }
+      ]
+    },
+    {
+      "type": "stay",
+      "startFrame": 542,
+      "durationInFrames": 79,
+      "title": "During your stay",
+      "captions": [
+        {
+          "text": "Coming",
+          "startSec": 18.05,
+          "endSec": 18.45
+        },
+        {
+          "text": "up:",
+          "startSec": 18.45,
+          "endSec": 18.85
+        },
+        {
+          "text": "Christmas",
+          "startSec": 18.85,
+          "endSec": 19.25
+        },
+        {
+          "text": "market,",
+          "startSec": 19.25,
+          "endSec": 19.65
+        },
+        {
+          "text": "12–24",
+          "startSec": 19.65,
+          "endSec": 20.05
+        },
+        {
+          "text": "Dec.",
+          "startSec": 20.05,
+          "endSec": 20.45
+        }
+      ],
+      "factIds": [],
+      "subtitle": "Christmas market · 12–24 Dec"
+    },
+    {
+      "type": "outro",
+      "startFrame": 621,
+      "durationInFrames": 83,
+      "title": "What's outside",
+      "captions": [
+        {
+          "text": "That",
+          "startSec": 20.7,
+          "endSec": 21.1
+        },
+        {
+          "text": "is",
+          "startSec": 21.1,
+          "endSec": 21.5
+        },
+        {
+          "text": "what",
+          "startSec": 21.5,
+          "endSec": 21.9
+        },
+        {
+          "text": "is",
+          "startSec": 21.9,
+          "endSec": 22.3
+        },
+        {
+          "text": "outside.",
+          "startSec": 22.3,
+          "endSec": 22.7
+        }
+      ],
+      "factIds": [],
+      "items": [
+        {
+          "title": "Google Maps",
+          "detail": ""
+        },
+        {
+          "title": "GetYourGuide",
+          "detail": ""
+        },
+        {
+          "title": "Open-Meteo",
+          "detail": ""
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "google-maps:food",
+      "label": "Google Maps",
+      "url": "https://www.google.com/maps",
+      "fetchedAt": "2026-11-14T02:14:00.000Z"
+    }
+  ],
+  "oldestFetchedAt": "2026-11-14T02:14:00.000Z",
+  "listing": {
+    "title": "Sample listing",
+    "locationText": "Lisbon, Portugal"
+  },
+  "interests": [
+    "food",
+    "culture",
+    "nature"
+  ]
+}
