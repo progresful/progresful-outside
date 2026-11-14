@@ -60,6 +60,26 @@ describe('settings store', () => {
     expect(await store.get()).toEqual(saved);
   });
 
+  it('keeps both changes when two saves overlap', async () => {
+    const store = createSettingsStore(memoryArea());
+
+    const [, second] = await Promise.all([
+      store.save({ sites: { airbnb: false, booking: true } }),
+      store.save({ serverUrl: 'http://localhost:9000' }),
+    ]);
+
+    const expected = { interests: [], sites: { airbnb: false, booking: true }, serverUrl: 'http://localhost:9000' };
+    expect(await store.get()).toEqual(expected);
+    expect(second).toEqual(expected);
+  });
+
+  it('writes only the keys that were changed', async () => {
+    const area = memoryArea();
+    await createSettingsStore(area).save({ interests: ['food'] });
+
+    expect(Object.keys(area.data)).toEqual(['interests']);
+  });
+
   it('caps saved interests at 5', async () => {
     const store = createSettingsStore(memoryArea());
 

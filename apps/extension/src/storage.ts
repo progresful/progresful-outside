@@ -68,12 +68,25 @@ function cleanSettings(raw: Record<string, unknown>): Settings {
 
 export function createSettingsStore(area: KeyValueArea): SettingsStore {
   const get = async (): Promise<Settings> => cleanSettings(await area.get(KEYS));
+  // Saves run one after another, and each writes only the keys it changed, so two quick changes
+  // (a switch, then the server address) can never overwrite each other.
+  let lastSave: Promise<unknown> = Promise.resolve();
+
+  const apply = async (patch: Partial<Settings>): Promise<Settings> => {
+    const merged = cleanSettings({ ...(await get()), ...patch });
+    const changed = Object.fromEntries(
+      (Object.keys(merged) as Array<keyof Settings>).filter((key) => key in patch).map((key) => [key, merged[key]]),
+    );
+    await area.set(changed);
+    return merged;
+  };
+
   return {
     get,
-    async save(patch: Partial<Settings>): Promise<Settings> {
-      const merged = cleanSettings({ ...(await get()), ...patch });
-      await area.set({ ...merged });
-      return merged;
+    save(patch: Partial<Settings>): Promise<Settings> {
+      const saved = lastSave.then(() => apply(patch));
+      lastSave = saved.catch(() => undefined);
+      return saved;
     },
   };
 }

@@ -220,6 +220,18 @@ describe('page controller', () => {
     expect(h.session.restart).toHaveBeenCalledTimes(1);
   });
 
+  it('retry() rebuilds the current listing, and does nothing without one', async () => {
+    const h = harness();
+    const controller = createPageController(h.deps);
+
+    controller.retry();
+    controller.onUrl('https://www.airbnb.com/rooms/1');
+    await flush();
+    controller.retry();
+
+    expect(h.session.restart).toHaveBeenCalledTimes(1);
+  });
+
   it('reports its state for the popup', async () => {
     const h = harness();
     const controller = createPageController(h.deps);

@@ -33,6 +33,8 @@ export interface PageController {
   onSettings(settings: Settings): void;
   /** Opens the player for the video the badge currently offers, if any. */
   playCurrent(): void;
+  /** Builds the current listing's video again. */
+  retry(): void;
   snapshot(): PageSnapshot;
   stop(): void;
 }
@@ -142,6 +144,9 @@ export function createPageController(deps: PageDeps): PageController {
       if (badgeState.kind === 'ready' || badgeState.kind === 'refreshing') {
         deps.openPlayer(badgeState.videoId);
       }
+    },
+    retry(): void {
+      active?.session.restart();
     },
     snapshot: (): PageSnapshot => ({
       onListing: active !== null,
