@@ -40,6 +40,125 @@ const bookingDoc = page(
   '<a id="hotel_address" data-atlas-latlng="38.7071,-9.1355"></a><div id="photo_wrapper"></div>',
 );
 
+/** Metadata copied from a live Airbnb listing on 2026-11-14: no country in the address, eight photos. */
+const liveAirbnbDoc = page(
+  `<title>Alfama - Beco do Belo Studio - Apartments for Rent in Lisbon, Li, Portugal - Airbnb</title>
+   <meta property="og:title" content="Rental unit in Lisbon · ★4.85 · 1 bedroom · 1 bed · 1 bath">
+   <meta property="og:image" content="https://a0.muscache.com/im/pictures/hosting/Hosting-X/original/25bd02a7.jpeg">
+   <script type="application/ld+json">${JSON.stringify({
+     '@context': 'https://schema.org',
+     '@type': 'VacationRental',
+     identifier: 'RGVtYW5k',
+     name: 'Alfama - Beco do Belo Studio',
+     image: ['25bd02a7', '3b8aefd4', '995699a0'].map((id) => `https://a0.muscache.com/im/pictures/hosting/Hosting-X/original/${id}.jpeg`),
+     latitude: 38.7117,
+     longitude: -9.12667,
+     address: { addressLocality: 'Lisbon' },
+     aggregateRating: { '@type': 'AggregateRating', ratingValue: 4.85, ratingCount: '652' },
+   })}</script>`,
+  '<div data-section-id="HERO_DEFAULT"></div>',
+);
+
+/** Metadata copied from a live Booking.com hotel page on 2026-11-14: the "locality" is the street. */
+const liveBookingDoc = page(
+  `<title>Hotel Avenida Palace, Lisbon (updated prices 2027)</title>
+   <meta property="og:image" content="https://q-xx.bstatic.com/xdata/images/hotel/1200x630/21303863.jpg?k=8b47&o=">
+   <script type="application/ld+json">${JSON.stringify({
+     '@context': 'http://schema.org',
+     '@type': 'Hotel',
+     name: 'Hotel Avenida Palace',
+     url: 'https://www.booking.com/hotel/pt/avenida-palace.en-gb.html',
+     image: 'https://cf.bstatic.com/xdata/images/hotel/max500/21303863.jpg?k=8b47&o=&hp=1',
+     address: {
+       '@type': 'PostalAddress',
+       addressRegion: '',
+       addressLocality: 'Rua 1. De Dezembro, 123',
+       streetAddress: 'Rua 1. De Dezembro, 123, Santa Maria Maior, 1200-359 Lisbon, Portugal',
+       postalCode: '1200-359',
+       addressCountry: 'Portugal',
+     },
+   })}</script>`,
+  `<div id="photo_wrapper"></div>
+   <div data-testid="GalleryUnifiedDesktop-wrapper">
+     <img src="https://cf.bstatic.com/xdata/images/hotel/max1024x768/21303863.jpg?k=8b47&o=">
+     <img src="https://cf.bstatic.com/xdata/images/hotel/max500/99887766.jpg?k=aa11&o=">
+     <img src="https://cf.bstatic.com/static/img/icon.svg">
+   </div>
+   <a data-atlas-latlng="38.71491812653197,-9.141389429569244"></a>`,
+);
+
+/** jsdom lays nothing out, so an element only has a size when a test gives it one. */
+function giveSize(element: Element | null, width: number, height: number): void {
+  if (element) {
+    element.getBoundingClientRect = () => new DOMRect(0, 0, width, height);
+  }
+}
+
+describe('on live page shapes', () => {
+  it('adds the country from the page title when the Airbnb address has only the city', () => {
+    const listing = adapterFor(airbnbUrl)!.adapter.extractListing(liveAirbnbDoc, airbnbUrl);
+
+    expect(listing).toMatchObject({ title: 'Alfama - Beco do Belo Studio', locationText: 'Lisbon, Portugal', lat: 38.7117, lng: -9.12667 });
+  });
+
+  it('asks Airbnb for photos at video size, not the multi-megabyte originals', () => {
+    const listing = adapterFor(airbnbUrl)!.adapter.extractListing(liveAirbnbDoc, airbnbUrl);
+
+    expect(listing?.photos).toEqual(
+      ['25bd02a7', '3b8aefd4', '995699a0'].map((id) => `https://a0.muscache.com/im/pictures/hosting/Hosting-X/original/${id}.jpeg?im_w=1440`),
+    );
+  });
+
+  it.each([
+    ['Loft - Condominiums for Rent in Austin, Texas, United States - Airbnb', 'Austin, United States'],
+    ['Maison - Houses for Rent in Saint-Malo, Bretagne, France - Airbnb', 'Saint-Malo, France'],
+    ['Flat - Apartments for Rent in Lisbon - Airbnb', 'Lisbon'],
+    ['Flat - Airbnb', 'Lisbon'],
+  ])('reads the country from "%s"', (title, expected) => {
+    const doc = page(
+      `<title>${title}</title><script type="application/ld+json">${JSON.stringify({ '@type': 'VacationRental', name: 'Flat', address: { addressLocality: expected.split(',')[0] } })}</script>`,
+    );
+
+    expect(adapterFor(airbnbUrl)!.adapter.extractListing(doc, airbnbUrl)?.locationText).toBe(expected);
+  });
+
+  it('reads the city of a Booking.com hotel from its title, not the street in its address', () => {
+    const listing = adapterFor(bookingUrl)!.adapter.extractListing(liveBookingDoc, bookingUrl);
+
+    expect(listing).toMatchObject({
+      title: 'Hotel Avenida Palace',
+      locationText: 'Lisbon, Portugal',
+      lat: 38.71491812653197,
+      lng: -9.141389429569244,
+    });
+  });
+
+  it('falls back to the street address for the Booking.com city when the title has none', () => {
+    const doc = page(liveBookingDoc.head.innerHTML.replace(/<title>[^<]*<\/title>/, '<title>Booking.com</title>'), liveBookingDoc.body.innerHTML);
+
+    expect(adapterFor(bookingUrl)!.adapter.extractListing(doc, bookingUrl)?.locationText).toBe('Lisbon, Portugal');
+  });
+
+  it('collects Booking.com photos from the gallery too, all at video size', () => {
+    const listing = adapterFor(bookingUrl)!.adapter.extractListing(liveBookingDoc, bookingUrl);
+
+    expect(listing?.photos).toEqual([
+      'https://cf.bstatic.com/xdata/images/hotel/max1280x900/21303863.jpg?k=8b47&o=&hp=1',
+      'https://cf.bstatic.com/xdata/images/hotel/max1280x900/21303863.jpg?k=8b47&o=',
+      'https://cf.bstatic.com/xdata/images/hotel/max1280x900/99887766.jpg?k=aa11&o=',
+      'https://q-xx.bstatic.com/xdata/images/hotel/1200x630/21303863.jpg?k=8b47&o=',
+    ]);
+  });
+
+  it('prefers the Booking.com gallery that is actually laid out over the empty legacy wrapper', () => {
+    giveSize(liveBookingDoc.querySelector('[data-testid="GalleryUnifiedDesktop-wrapper"]'), 1100, 420);
+
+    const found = adapterFor(bookingUrl)!.adapter.findGallery(liveBookingDoc);
+
+    expect(found?.getAttribute('data-testid')).toBe('GalleryUnifiedDesktop-wrapper');
+  });
+});
+
 describe('adapterFor', () => {
   it.each([
     [airbnbUrl, 'airbnb', '12345'],
@@ -77,7 +196,7 @@ describe('airbnb adapter', () => {
       locationText: 'Lisbon, Portugal',
       lat: 38.7139,
       lng: -9.1334,
-      photos: [1, 2, 3, 4, 5].map((n) => `https://a0.muscache.com/im/pictures/${n}.jpg`),
+      photos: [1, 2, 3, 4, 5].map((n) => `https://a0.muscache.com/im/pictures/${n}.jpg?im_w=1440`),
       checkIn: '2026-12-12',
       checkOut: '2026-12-16',
       guests: 2,
@@ -112,7 +231,7 @@ describe('booking adapter', () => {
       locationText: 'Lisbon, Portugal',
       lat: 38.7071,
       lng: -9.1355,
-      photos: ['https://cf.bstatic.com/xdata/images/hotel/max1024x768/main.jpg', 'https://cf.bstatic.com/xdata/images/hotel/max1024x768/og.jpg'],
+      photos: ['https://cf.bstatic.com/xdata/images/hotel/max1280x900/main.jpg', 'https://cf.bstatic.com/xdata/images/hotel/max1280x900/og.jpg'],
       checkIn: '2026-12-12',
       checkOut: '2026-12-16',
       guests: 2,
@@ -142,6 +261,6 @@ describe('every adapter', () => {
        <meta property="og:image" content="http://a0.muscache.com/insecure.jpg">
        <script type="application/ld+json">${JSON.stringify({ '@type': 'VacationRental', image: ['javascript:alert(1)', 'https://a0.muscache.com/ok.jpg'] })}</script>`,
     );
-    expect(adapterFor(airbnbUrl)!.adapter.extractListing(mixed, airbnbUrl)?.photos).toEqual(['https://a0.muscache.com/ok.jpg']);
+    expect(adapterFor(airbnbUrl)!.adapter.extractListing(mixed, airbnbUrl)?.photos).toEqual(['https://a0.muscache.com/ok.jpg?im_w=1440']);
   });
 });

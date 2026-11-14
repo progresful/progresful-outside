@@ -43,6 +43,13 @@ export function createOverlay(
     }
   };
 
+  // Focus stays on the listing page after the badge is clicked, so Escape has to be heard here too.
+  const onKey = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      close();
+    }
+  };
+
   function close(): void {
     if (!frame) {
       return;
@@ -51,6 +58,7 @@ export function createOverlay(
     frame = null;
     doc.documentElement.style.overflow = overflowBefore;
     view?.removeEventListener('message', onMessage);
+    doc.removeEventListener('keydown', onKey);
   }
 
   return {
@@ -61,10 +69,13 @@ export function createOverlay(
       created.title = "What's outside";
       created.setAttribute('allow', 'autoplay; fullscreen');
       Object.assign(created.style, FRAME_STYLE);
+      // Once loaded, the player takes the keyboard: space pauses, Escape closes.
+      created.addEventListener('load', () => created.focus());
       overflowBefore = doc.documentElement.style.overflow;
       doc.documentElement.style.overflow = 'hidden';
       doc.body.append(created);
       view?.addEventListener('message', onMessage);
+      doc.addEventListener('keydown', onKey);
       frame = created;
     },
     close,

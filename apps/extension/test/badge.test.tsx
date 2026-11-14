@@ -13,10 +13,12 @@ function shadow(): ShadowRoot {
   return host.shadowRoot;
 }
 
-function gallery(): Element {
+/** A gallery finder. jsdom lays nothing out, so the element only has a box when the test gives it one. */
+function gallery(rect: DOMRect = new DOMRect(100, 100, 600, 400)): () => Element {
   const element = document.createElement('div');
+  element.getBoundingClientRect = () => rect;
   document.body.append(element);
-  return element;
+  return () => element;
 }
 
 afterEach(() => {
@@ -96,14 +98,47 @@ describe('mountBadge', () => {
     expect((document.querySelector(BADGE_TAG) as HTMLElement).style.display).toBe('none');
   });
 
-  it('sits on the gallery when there is one, and in the corner when there is not', () => {
+  it('sits on the bottom-left corner of the gallery', () => {
     mountBadge(document, gallery(), handlers());
-    expect((document.querySelector(BADGE_TAG) as HTMLElement).style.position).toBe('absolute');
-    document.body.replaceChildren();
 
-    mountBadge(document, null, handlers());
+    const host = document.querySelector(BADGE_TAG) as HTMLElement;
+    // Gallery box: left 100, bottom 500. The badge is 56 px tall and sits 16 px inside the corner.
+    expect([host.style.position, host.style.left, host.style.top]).toEqual(['absolute', '116px', '428px']);
+  });
+
+  it('sits in the corner of the window when the page has no gallery', () => {
+    mountBadge(document, () => null, handlers());
+
     const host = document.querySelector(BADGE_TAG) as HTMLElement;
     expect([host.style.position, host.style.right, host.style.bottom]).toEqual(['fixed', '24px', '24px']);
+  });
+
+  it('waits in the corner while the gallery has no size, and moves onto it once it has', () => {
+    let rect = new DOMRect(0, 0, 0, 0);
+    const element = document.createElement('div');
+    element.getBoundingClientRect = () => rect;
+    document.body.append(element);
+    mountBadge(document, () => element, handlers());
+    const host = document.querySelector(BADGE_TAG) as HTMLElement;
+    expect([host.style.position, host.style.right, host.style.bottom]).toEqual(['fixed', '24px', '24px']);
+
+    rect = new DOMRect(100, 100, 600, 400);
+    window.dispatchEvent(new Event('resize'));
+
+    expect([host.style.position, host.style.left, host.style.top]).toEqual(['absolute', '116px', '428px']);
+    expect([host.style.right, host.style.bottom]).toEqual(['', '']);
+  });
+
+  it('finds the gallery again when the page replaces it', () => {
+    let current: Element | null = null;
+    mountBadge(document, () => current, handlers());
+    const host = document.querySelector(BADGE_TAG) as HTMLElement;
+    expect(host.style.position).toBe('fixed');
+
+    current = gallery()();
+    window.dispatchEvent(new Event('resize'));
+
+    expect(host.style.position).toBe('absolute');
   });
 
   it('removes itself completely', () => {

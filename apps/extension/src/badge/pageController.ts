@@ -2,7 +2,7 @@ import type { ListingContext } from '@outside/shared';
 import type { SiteAdapter } from '../sites';
 import type { Settings } from '../storage';
 import type { BadgeState } from './badgeState';
-import type { BadgeHandlers, BadgeView } from './mount';
+import type { BadgeHandlers, BadgeView, GalleryFinder } from './mount';
 import type { ListingSession } from './session';
 
 /** Single-page sites render the listing after the URL changes, so extraction is retried for a while. */
@@ -13,7 +13,7 @@ export interface PageDeps {
   doc: Document;
   adapterFor: (url: string) => { adapter: SiteAdapter; listingId: string } | null;
   createSession: (render: (state: BadgeState) => void) => ListingSession;
-  mount: (gallery: Element | null, handlers: BadgeHandlers) => BadgeView;
+  mount: (findGallery: GalleryFinder, handlers: BadgeHandlers) => BadgeView;
   getSettings: () => Promise<Settings>;
   openPlayer: (videoId: string) => void;
   setTimeout: (fn: () => void, ms: number) => unknown;
@@ -71,7 +71,7 @@ export function createPageController(deps: PageDeps): PageController {
   };
 
   const activate = (adapter: SiteAdapter, listing: ListingContext): void => {
-    const badge = deps.mount(adapter.findGallery(deps.doc), {
+    const badge = deps.mount(() => adapter.findGallery(deps.doc), {
       onPlay: deps.openPlayer,
       onRetry: () => active?.session.restart(),
     });

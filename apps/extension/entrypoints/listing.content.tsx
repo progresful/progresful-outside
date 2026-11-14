@@ -31,7 +31,7 @@ export default defineContentScript({
       adapterFor,
       createSession: (render) =>
         createListingSession({ send: (message) => browser.runtime.sendMessage(message), render, getSettings, ...timers }),
-      mount: (gallery, handlers) => mountBadge(document, gallery, handlers),
+      mount: (findGallery, handlers) => mountBadge(document, findGallery, handlers),
       getSettings,
       openPlayer: (videoId) => overlay.open(videoId),
       ...timers,

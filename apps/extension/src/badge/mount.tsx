@@ -30,37 +30,55 @@ export interface BadgeView {
   remove(): void;
 }
 
+/** Finds the listing's photo gallery as the page is now; null when it has none (yet). */
+export type GalleryFinder = () => Element | null;
+
+/** Listing pages keep laying out for a while after load; the badge re-checks its place at these moments. */
+const SETTLE_CHECKS_MS = [300, 1_000, 2_500, 5_000];
+
+function boxOf(gallery: Element | null): DOMRect | null {
+  const rect = gallery?.getBoundingClientRect();
+  return rect && rect.width > 0 && rect.height > 0 ? rect : null;
+}
+
 /**
- * Places the host over the gallery's bottom-left corner, in page coordinates, and keeps it there
- * as the page lays out. The gallery itself is never touched. With no gallery, the badge sits in
- * the viewport's bottom-right corner.
+ * Keeps the host over the gallery's bottom-left corner, in page coordinates, as the page lays out.
+ * The gallery itself is never touched. While the page has no laid-out gallery, the badge waits in
+ * the window's bottom-right corner, and it moves onto the gallery once there is one.
  */
-function position(host: HTMLElement, gallery: Element | null, doc: Document): () => void {
-  host.style.zIndex = TOP_LAYER;
-  if (!gallery) {
-    Object.assign(host.style, { position: 'fixed', right: CORNER_INSET, bottom: CORNER_INSET });
-    return () => {};
-  }
+function position(host: HTMLElement, findGallery: GalleryFinder, doc: Document): () => void {
   const view = doc.defaultView;
+  host.style.zIndex = TOP_LAYER;
+
   const place = (): void => {
-    const rect = gallery.getBoundingClientRect();
-    host.style.left = `${rect.left + (view?.scrollX ?? 0) + GALLERY_INSET}px`;
-    host.style.top = `${rect.bottom + (view?.scrollY ?? 0) - GALLERY_INSET - BADGE_HEIGHT}px`;
+    const rect = boxOf(findGallery());
+    if (!rect) {
+      Object.assign(host.style, { position: 'fixed', left: '', top: '', right: CORNER_INSET, bottom: CORNER_INSET });
+      return;
+    }
+    Object.assign(host.style, {
+      position: 'absolute',
+      right: '',
+      bottom: '',
+      left: `${rect.left + (view?.scrollX ?? 0) + GALLERY_INSET}px`,
+      top: `${rect.bottom + (view?.scrollY ?? 0) - GALLERY_INSET - BADGE_HEIGHT}px`,
+    });
   };
-  host.style.position = 'absolute';
+
   place();
   view?.addEventListener('resize', place);
   const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);
-  observer?.observe(gallery);
   observer?.observe(doc.body);
+  const timers = SETTLE_CHECKS_MS.map((delay) => setTimeout(place, delay));
   return () => {
     view?.removeEventListener('resize', place);
     observer?.disconnect();
+    timers.forEach((timer) => clearTimeout(timer));
   };
 }
 
 /** Mounts the badge in its own shadow root, so page styles cannot leak in and ours cannot leak out. */
-export function mountBadge(doc: Document, gallery: Element | null, handlers: BadgeHandlers): BadgeView {
+export function mountBadge(doc: Document, findGallery: GalleryFinder, handlers: BadgeHandlers): BadgeView {
   const host = doc.createElement(BADGE_TAG);
   const shadow = host.attachShadow({ mode: 'open' });
   const style = doc.createElement('style');
@@ -70,7 +88,7 @@ export function mountBadge(doc: Document, gallery: Element | null, handlers: Bad
   shadow.append(style, mountPoint);
   doc.body.append(host);
 
-  const stopPositioning = position(host, gallery, doc);
+  const stopPositioning = position(host, findGallery, doc);
   const root = createRoot(mountPoint);
   let removed = false;
 

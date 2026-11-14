@@ -1,5 +1,5 @@
 import sample from '@outside/video/sample-manifest.json';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CLOSE_MESSAGE, createOverlay } from '../src/overlay';
 import { manifestFrom, playerParams } from '../src/player/playerData';
 
@@ -50,6 +50,42 @@ describe('overlay', () => {
 
     expect(frames()).toHaveLength(0);
     expect(overlay.isOpen()).toBe(false);
+  });
+
+  it('closes when Escape is pressed on the listing page', () => {
+    const overlay = createOverlay(document, playerUrl, ORIGIN);
+    overlay.open('abc');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(frames()).toHaveLength(1);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(frames()).toHaveLength(0);
+    expect(overlay.isOpen()).toBe(false);
+  });
+
+  it('stops listening for Escape once it is closed', () => {
+    const overlay = createOverlay(document, playerUrl, ORIGIN);
+    overlay.open('abc');
+    overlay.close();
+    document.documentElement.style.overflow = 'clip';
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    // A second close would have put the old overflow value back.
+    expect(document.documentElement.style.overflow).toBe('clip');
+  });
+
+  it('hands the keyboard to the player once it has loaded, so space and Escape reach it', () => {
+    const focus = vi.spyOn(HTMLIFrameElement.prototype, 'focus');
+    const overlay = createOverlay(document, playerUrl, ORIGIN);
+    overlay.open('abc');
+    expect(focus).not.toHaveBeenCalled();
+
+    frames()[0]?.dispatchEvent(new Event('load'));
+
+    expect(focus).toHaveBeenCalledTimes(1);
+    focus.mockRestore();
   });
 
   it.each([

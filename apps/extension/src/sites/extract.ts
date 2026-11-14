@@ -90,9 +90,13 @@ function imageUrls(image: unknown): string[] {
   return url ? [url] : [];
 }
 
-/** Up to five distinct https photos: the listing's own images first, then the share image. */
-export function photos(entity: Entity, doc: Document): string[] {
-  const candidates = [...imageUrls(entity.image), ...imageUrls(metaContent(doc, 'og:image'))];
+/** The listing's own images as its JSON-LD gives them. */
+export function entityPhotos(entity: Entity): string[] {
+  return imageUrls(entity.image);
+}
+
+/** Up to five distinct https photos, in the order given. */
+export function uniquePhotos(candidates: readonly string[]): string[] {
   return [...new Set(candidates.filter((url) => url.startsWith('https://')))].slice(0, MAX_LISTING_PHOTOS);
 }
 
@@ -108,8 +112,18 @@ export function intParam(params: URLSearchParams, name: string): number | undefi
   return value !== undefined && Number.isInteger(value) && value > 0 ? value : undefined;
 }
 
+function hasSize(element: Element): boolean {
+  const rect = element.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+
+/**
+ * The first selector's element that is actually laid out; failing that, the first that exists.
+ * Sites keep empty legacy wrappers around, and a badge placed on one of those ends up off screen.
+ */
 export function firstMatch(doc: Document, selectors: readonly string[]): Element | null {
-  return selectors.map((selector) => doc.querySelector(selector)).find((element) => element !== null) ?? null;
+  const found = selectors.flatMap((selector) => doc.querySelector(selector) ?? []);
+  return found.find(hasSize) ?? found[0] ?? null;
 }
 
 /** Validates against the shared schema, so the server never receives a listing it would reject. */
