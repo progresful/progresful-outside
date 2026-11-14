@@ -37,7 +37,9 @@ function withoutWeakestPlace(sel: Selection): Selection {
  */
 export async function voiceToFit(deps: PipelineDeps, sel: Selection, scenes: StoryScene[]): Promise<Voiced> {
   const rewrite = (selection: Selection): Promise<StoryScene[]> =>
-    scriptWithGuard(deps.complete, selection, TIGHT_WORD_BUDGET);
+    scriptWithGuard(deps.complete, selection, TIGHT_WORD_BUDGET, (reasons) =>
+      deps.onSourceError?.('script', new Error(`shorter rewrite: ${reasons.join('; ')}`)),
+    );
   const attempts: Array<() => Promise<Pick<Voiced, 'sel' | 'scenes'>>> = [
     async () => ({ sel, scenes }),
     async () => ({ sel, scenes: await rewrite(sel) }),

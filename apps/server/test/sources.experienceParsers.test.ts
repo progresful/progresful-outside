@@ -122,6 +122,16 @@ describe('parseGetYourGuideMarkdown', () => {
     expect(byTitle('Photoshoot')).toBeUndefined();
   });
 
+  it('cleans a title that repeats its place and is decorated with emoji', () => {
+    const card = `[![image](https://cdn.getyourguide.com/fallback/default.png)${SEP}Rovaniemi⭐Rovaniemi: Northern Lights Tour - 100% Guarantee & Photos⭐4 hours • Small group${SEP}4.9${SEP}(2,150)${SEP}From€79](https://www.getyourguide.com/rovaniemi-l1/northern-lights-t99/)`;
+
+    expect(parseGetYourGuideMarkdown(card)[0]).toMatchObject({
+      title: 'Rovaniemi: Northern Lights Tour - 100% Guarantee & Photos',
+      durationText: '4 hours',
+      priceText: '€79',
+    });
+  });
+
   it('keeps a real image when the page provides one', () => {
     const card = `[![image](https://cdn.getyourguide.com/img/tour-1.jpg)${SEP}PortoSix Bridges Cruise50 minutes${SEP}4.3${SEP}(8,120)${SEP}From€18](https://www.getyourguide.com/porto-l151/six-bridges-t123/?q=Porto)`;
 

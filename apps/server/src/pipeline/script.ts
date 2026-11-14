@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { venueName } from '../sources/events';
 import { formatPrice } from '../sources/price';
 import type { TripWindow } from '../sources/tripWindow';
+import { precipitationWord } from '../sources/weather';
 import type { NormalizedPlace } from './normalize';
 import { spokenTravel } from './select';
 import { MAX_WORDS_PER_LINE, validateLines } from './validateScript';
@@ -29,8 +30,11 @@ export interface Selection {
 /** Sends a system and user prompt, returns the model's JSON matching the schema. Injected for tests. */
 export type Complete = (system: string, user: string, jsonSchema: object) => Promise<unknown>;
 
-/** About 25 seconds of speech: room for seven scenes inside the 30-second limit. */
-export const DEFAULT_WORD_BUDGET = 65;
+/**
+ * About 25 seconds of speech at the voice's measured pace (2.3 words a second with the pauses
+ * between scenes), so even a script that uses the validator's slack stays inside 30 seconds.
+ */
+export const DEFAULT_WORD_BUDGET = 58;
 const MIN_WORDS_PER_LINE = 8;
 const LINE_HEADROOM_WORDS = 2;
 const MAX_EXPERIENCES = 3;
@@ -65,6 +69,11 @@ export function planScenes(sel: Selection): PlannedScene[] {
   ];
 }
 
+/** "minus 19" rather than "-19": a voice reads the word, and the guard checks the sign. */
+function spokenDegrees(celsius: number): string {
+  return celsius < 0 ? `minus ${Math.abs(celsius)}` : String(celsius);
+}
+
 function describeFact(fact: Fact): Record<string, unknown> {
   switch (fact.kind) {
     case 'place':
@@ -81,7 +90,11 @@ function describeFact(fact: Fact): Record<string, unknown> {
     case 'event':
       return { title: fact.title, when: fact.dateText, ...(venueName(fact.venue) ? { where: venueName(fact.venue) } : {}) };
     case 'weather':
-      return { lowC: fact.tempMinC, highC: fact.tempMaxC, rainChancePercent: fact.precipitationChance };
+      return {
+        low: `${spokenDegrees(fact.tempMinC)} °C`,
+        high: `${spokenDegrees(fact.tempMaxC)} °C`,
+        [`${precipitationWord(fact)}ChancePercent`]: fact.precipitationChance,
+      };
   }
 }
 
@@ -159,7 +172,7 @@ function templateLine(scene: PlannedScene, facts: ReadonlyMap<string, Fact>, pla
     return `Coming up: ${fact.title}, ${fact.dateText}.`;
   }
   if (fact?.kind === 'weather') {
-    return `Expect ${fact.tempMinC} to ${fact.tempMaxC} degrees.`;
+    return `Expect ${spokenDegrees(fact.tempMinC)} to ${spokenDegrees(fact.tempMaxC)} degrees.`;
   }
   return 'That is what is outside.';
 }

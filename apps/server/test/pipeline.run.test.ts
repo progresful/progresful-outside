@@ -184,6 +184,19 @@ describe('runPipeline', () => {
     expect(systems.some((system) => system.includes('about 45 words'))).toBe(true);
   });
 
+  it('reports it when the shortened script could not come from the model either', async () => {
+    const onSourceError = vi.fn();
+    const synthesize = vi
+      .fn()
+      .mockImplementationOnce(async (lines: readonly string[]) => ({ audio: Buffer.from('a'), alignment: alignFor(lines, 0.2) }))
+      .mockImplementation(async (lines: readonly string[]) => ({ audio: Buffer.from('b'), alignment: alignFor(lines) }));
+
+    await runPipeline(pipelineDeps({ synthesize, onSourceError }), request, () => {});
+
+    // Once for the first script, once for the shorter rewrite.
+    expect(onSourceError.mock.calls.filter(([sourceId]) => sourceId === 'script')).toHaveLength(2);
+  });
+
   it('fails when the video cannot be made to fit', async () => {
     const synthesize = vi.fn(async (lines: readonly string[]) => ({ audio: Buffer.from('a'), alignment: alignFor(lines, 0.3) }));
 

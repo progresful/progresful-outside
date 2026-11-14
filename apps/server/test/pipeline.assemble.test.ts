@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { assembleManifest, formatDateRange, sceneImageUrls, type AssembleInput } from '../src/pipeline/assemble';
 import { factMap, planScenes, templateLines, type Selection, type StoryScene } from '../src/pipeline/script';
 import { silentTimings, totalFrames } from '../src/pipeline/timing';
-import { christmasMarket, market, museum, park, placeFact, selection, tour } from './fixtures/selection';
+import { christmasMarket, market, museum, park, placeFact, selection, tour, weather as weatherFact } from './fixtures/selection';
 
 const listing: ListingContext = {
   site: 'airbnb',
@@ -88,6 +88,20 @@ describe('assembleManifest', () => {
         { title: 'Alfama food tour', detail: 'from €45' },
       ],
     });
+  });
+
+  it('writes sub-zero weather so it cannot be misread, and calls it snow', () => {
+    const frozen = { ...weatherFact, tempMinC: -19, tempMaxC: -1, precipitationChance: 34 };
+    const stay = assembleManifest(input(selection({ events: [], weather: [frozen] }))).scenes.find((scene) => scene.type === 'stay');
+
+    expect(stay?.subtitle).toBe('−19 to −1 °C, 34% chance of snow');
+  });
+
+  it('keeps rain for a stay that only dips below zero', () => {
+    const chilly = { ...weatherFact, tempMinC: -5, tempMaxC: 6, precipitationChance: 43 };
+    const stay = assembleManifest(input(selection({ events: [], weather: [chilly] }))).scenes.find((scene) => scene.type === 'stay');
+
+    expect(stay?.subtitle).toBe('−5 to 6 °C, 43% chance of rain');
   });
 
   it('names the venue of the event when it is known', () => {

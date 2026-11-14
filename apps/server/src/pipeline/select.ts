@@ -115,9 +115,23 @@ function experienceScore(offer: RatedExperience): number {
   return offer.rating * Math.log10(offer.reviewCount + 1);
 }
 
-/** "Lisbon: Food & Wine Tour" and "Lisbon Food and Wine Tour" are the same tour on two marketplaces. */
-function titleKey(title: string): string {
-  return title.toLowerCase().replace(/&/g, 'and').replace(/[^\p{L}\p{N}]+/gu, '');
+const SAME_OFFER_OVERLAP = 0.6;
+
+function titleWords(title: string): Set<string> {
+  return new Set(title.toLowerCase().replace(/&/g, ' and ').match(/[\p{L}\p{N}]+/gu) ?? []);
+}
+
+/**
+ * Whether two titles describe the same outing: "Lisbon: Food & Wine Tour" and "Lisbon Food and
+ * Wine Tour" on two marketplaces, or a ferry day trip listed from both ends. Measured as the share
+ * of words the titles have in common.
+ */
+function sameOffer(a: string, b: string): boolean {
+  const first = titleWords(a);
+  const second = titleWords(b);
+  const shared = [...first].filter((word) => second.has(word)).length;
+  const total = first.size + second.size - shared;
+  return total > 0 && shared / total >= SAME_OFFER_OVERLAP;
 }
 
 function matchesInterest(title: string, interest: InterestId): boolean {
@@ -133,8 +147,9 @@ function matchesInterest(title: string, interest: InterestId): boolean {
  */
 export function selectExperiences(offers: readonly ExperienceFact[], interests: readonly InterestId[]): ExperienceFact[] {
   const ranked = offers.filter(isWellReviewed).sort((a, b) => experienceScore(b) - experienceScore(a));
-  const pool = ranked.filter(
-    (offer, index) => ranked.findIndex((other) => titleKey(other.title) === titleKey(offer.title)) === index,
+  const pool = ranked.reduce<RatedExperience[]>(
+    (kept, offer) => (kept.some((other) => sameOffer(other.title, offer.title)) ? kept : [...kept, offer]),
+    [],
   );
   const perInterest = interests.reduce<RatedExperience[]>((picked, interest) => {
     if (picked.length >= MAX_EXPERIENCES) {

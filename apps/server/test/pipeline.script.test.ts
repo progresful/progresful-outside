@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { LINES_JSON_SCHEMA, factMap, planScenes, scriptWithGuard, templateLines, writeLines } from '../src/pipeline/script';
+import { DEFAULT_WORD_BUDGET, LINES_JSON_SCHEMA, factMap, planScenes, scriptWithGuard, templateLines, writeLines } from '../src/pipeline/script';
 import { validateLines } from '../src/pipeline/validateScript';
-import { christmasMarket, market, museum, park, placeFact, selection } from './fixtures/selection';
+import { christmasMarket, market, museum, park, placeFact, selection, weather } from './fixtures/selection';
 
 const sel = selection();
 const plan = planScenes(sel);
@@ -169,6 +169,35 @@ describe('writeLines', () => {
     expect((complete.mock.calls[1] as [string])[0]).toContain('holiday rental in Lisbon, Portugal.');
   });
 
+  it.each([
+    'Pack warm: expect -19 to -1 degrees during your stay.',
+    'Expect minus 19 to minus 1 degrees, with a 34 percent chance of snow.',
+    'It will be between −19 and −1 °C.',
+  ])('accepts a line about temperatures below zero: %s', (line) => {
+    const frozen = selection({ events: [], weather: [{ ...weather, tempMinC: -19, tempMaxC: -1, precipitationChance: 34 }] });
+    const lines = withLine(5, line);
+
+    expect(validateLines(lines, planScenes(frozen), factMap(frozen), 65)).toEqual({ ok: true });
+  });
+
+  it('still rejects a temperature that is not in the forecast', () => {
+    const frozen = selection({ events: [], weather: [{ ...weather, tempMinC: -19, tempMaxC: -1, precipitationChance: 34 }] });
+
+    expect(validateLines(withLine(5, 'Expect -25 degrees.'), planScenes(frozen), factMap(frozen), 65).ok).toBe(false);
+  });
+
+  it('gives the model sub-zero weather in words it can say', async () => {
+    const complete = vi.fn().mockResolvedValue({ lines: goodLines });
+    const frozen = selection({ events: [], weather: [{ ...weather, tempMinC: -19, tempMaxC: -1, precipitationChance: 34 }] });
+
+    await writeLines(complete, planScenes(frozen), factMap(frozen), frozen.place, 65);
+
+    const user = (complete.mock.calls[0] as [string, string])[1];
+    expect(user).toContain('"low": "minus 19 °C"');
+    expect(user).toContain('"high": "minus 1 °C"');
+    expect(user).toContain('"snowChancePercent": 34');
+  });
+
   it('caps each line so 7 scenes fit the budget', async () => {
     const complete = vi.fn().mockResolvedValue({ lines: goodLines });
 
@@ -199,6 +228,16 @@ describe('writeLines', () => {
 
   it('throws when the model does not return a list of strings', async () => {
     await expect(writeLines(vi.fn().mockResolvedValue({ lines: [1, 2] }), plan, facts, sel.place, 50)).rejects.toThrow();
+  });
+});
+
+describe('the default word budget', () => {
+  it('leaves room inside 30 seconds for seven scenes at the voice\'s measured pace', () => {
+    // Measured on real runs: about 2.3 words a second including the pauses between scenes.
+    const WORDS_PER_SECOND = 2.3;
+    const SLACK_WORDS = 10;
+
+    expect((DEFAULT_WORD_BUDGET + SLACK_WORDS) / WORDS_PER_SECOND).toBeLessThan(30);
   });
 });
 

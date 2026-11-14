@@ -88,3 +88,8 @@ export async function fetchWeather(deps: SourceDeps, p: WeatherParams): Promise<
     return emptyResult();
   }
 }
+
+/** What falls when it is this cold: snow when the stay never gets above freezing, otherwise rain. */
+export function precipitationWord(fact: Pick<WeatherFact, 'tempMaxC'>): 'snow' | 'rain' {
+  return fact.tempMaxC <= 0 ? 'snow' : 'rain';
+}

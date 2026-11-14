@@ -49,6 +49,18 @@ function allowedNumbers(fact: Fact): number[] {
   }
 }
 
+/** "-19", "−19" and "minus 19" all say a negative number; the digits alone do not. */
+const MINUS_BEFORE = /(?:-|−|\bminus\s+)$/i;
+
+/**
+ * Whether a number in a line is one of the scene's facts. A fact below zero must be said with its
+ * minus; a hyphen before a positive fact ("8-17 degrees") is a range, not a sign.
+ */
+function isAllowed(value: number, textBefore: string, allowed: readonly number[]): boolean {
+  const matches = (wanted: number): boolean => allowed.some((fact) => Math.abs(fact - wanted) < TOLERANCE);
+  return matches(value) || (MINUS_BEFORE.test(textBefore) && matches(-value));
+}
+
 function wordCount(text: string): number {
   return text.trim().split(/\s+/).filter((word) => word.length > 0).length;
 }
@@ -62,9 +74,9 @@ function lineProblems(line: string, scene: PlannedScene, facts: ReadonlyMap<stri
     const fact = facts.get(id);
     return fact ? allowedNumbers(fact) : [];
   });
-  const invented = numberTokens(line)
-    .filter((token) => !allowed.some((value) => Math.abs(value - toNumber(token)) < TOLERANCE))
-    .map((token) => `${label}: the number ${token} is not in the facts for that scene`);
+  const invented = [...line.matchAll(NUMBER_TOKEN)]
+    .filter((match) => !isAllowed(toNumber(match[0]), line.slice(0, match.index), allowed))
+    .map((match) => `${label}: the number ${match[0]} is not in the facts for that scene`);
   const stale = STALE_PHRASE.exec(line);
   const spelled = SPELLED_LARGE.exec(line) ?? SPELLED_WITH_UNIT.exec(line);
   return [

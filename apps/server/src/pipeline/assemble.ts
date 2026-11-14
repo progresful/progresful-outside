@@ -9,6 +9,7 @@ import {
 } from '@outside/shared';
 import { venueName } from '../sources/events';
 import { formatPrice } from '../sources/price';
+import { precipitationWord } from '../sources/weather';
 import { factMap, planScenes, type Selection, type StoryScene } from './script';
 import { travelLabel } from './select';
 import { totalFrames, type SceneTiming } from './timing';
@@ -65,12 +66,18 @@ export function sceneImageUrls(listing: ListingContext, sel: Selection): string[
   return [...new Set(candidates.filter((url): url is string => url !== undefined))];
 }
 
+/** "8–17", or "−19 to −1" below zero, where a dash between the numbers would read as a second minus. */
+function temperatureRange(min: number, max: number): string {
+  const shown = (celsius: number): string => (celsius < 0 ? `−${Math.abs(celsius)}` : String(celsius));
+  return min < 0 || max < 0 ? `${shown(min)} to ${shown(max)}` : `${min}–${max}`;
+}
+
 function stayText(fact: Fact | undefined): string | undefined {
   if (fact?.kind === 'event') {
     return [fact.title, venueName(fact.venue), fact.dateText].filter((part) => part !== undefined).join(' · ');
   }
   if (fact?.kind === 'weather') {
-    return `${fact.tempMinC}–${fact.tempMaxC} °C, ${fact.precipitationChance}% chance of rain`;
+    return `${temperatureRange(fact.tempMinC, fact.tempMaxC)} °C, ${fact.precipitationChance}% chance of ${precipitationWord(fact)}`;
   }
   return undefined;
 }

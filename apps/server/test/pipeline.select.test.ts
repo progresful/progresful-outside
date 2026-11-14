@@ -213,6 +213,30 @@ describe('selectExperiences', () => {
     expect(titles(selectExperiences(offers, ['food']))).toEqual(['Lisbon Food and Wine Tour', 'Tile Workshop']);
   });
 
+  it('shows one of two offers that are the same trip in other words', () => {
+    const offers = [
+      offer('Helsinki: Return Day Trip Ferry Ticket to Tallinn', { reviewCount: 9_000 }),
+      offer('Tallinn: Return Day Trip Ferry Transfer to Helsinki', { reviewCount: 8_000 }),
+      offer('Helsinki: Nuuksio National Park Hiking Tour with Food', { reviewCount: 700 }),
+      offer('Helsinki: Sauna and Sea Swim', { reviewCount: 300 }),
+    ];
+
+    expect(titles(selectExperiences(offers, []))).toEqual([
+      'Helsinki: Return Day Trip Ferry Ticket to Tallinn',
+      'Helsinki: Nuuksio National Park Hiking Tour with Food',
+      'Helsinki: Sauna and Sea Swim',
+    ]);
+  });
+
+  it('keeps two different trips that merely share a destination', () => {
+    const offers = [
+      offer('Sintra and Cascais Small-Group Day Trip from Lisbon', { reviewCount: 9_000 }),
+      offer('Small Group Tour to Sintra, Pena Palace, Cabo Roca and Cascais', { reviewCount: 8_000 }),
+    ];
+
+    expect(selectExperiences(offers, [])).toHaveLength(2);
+  });
+
   it('returns at most three', () => {
     const offers = ['A', 'B', 'C', 'D', 'E'].map((title) => offer(title));
 

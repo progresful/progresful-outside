@@ -37,6 +37,15 @@ function findScore(lines: readonly string[]): Score {
   return { index, rating: Number(lines[index]), reviewCount: Number(reviews.replace(/[.,]/g, '')) };
 }
 
+const DECORATION = /[\p{Extended_Pictographic}\uFE0F\u200D]/gu;
+/** "RovaniemiRovaniemi: Northern Lights" — the card's place label glued onto a title that already starts with it. */
+const REPEATED_START = /^(.{3,40}?)\1(?=[:\s-])/u;
+
+/** A title without emoji, doubled spaces or a repeated place label. */
+function cleanTitle(title: string): string {
+  return title.replace(DECORATION, '').replace(/\s+/g, ' ').trim().replace(REPEATED_START, '$1');
+}
+
 function compact(raw: RawExperience): RawExperience {
   return Object.fromEntries(Object.entries(raw).filter(([, value]) => value !== undefined)) as unknown as RawExperience;
 }
@@ -58,7 +67,7 @@ function viatorTour(text: string, url: string): RawExperience | null {
   const score = findScore(lines);
   const durationIndex = lines.findIndex((line) => VIATOR_DURATION.test(line));
   // The photo's alt text is often a caption ("Benagil sea cave"), so the card's own title line comes first.
-  const title = lines[durationIndex - 1] ?? image?.alt;
+  const title = cleanTitle(lines[durationIndex - 1] ?? image?.alt ?? '');
   // "from", then the price; a discounted tour shows the old price first, so the last one is what you pay.
   const priceText = fromIndex < 0 ? undefined : lines.slice(fromIndex).join(' ').replace(/\*/g, '').match(PRICE_TOKEN)?.at(-1);
   if (!priceText || !title || lines.some((line) => VIATOR_GROUP_PRICE.test(line))) {
@@ -97,7 +106,7 @@ const PER_GROUP = /per group|private group/i;
 function gygTitleAndDuration(line: string): { title: string; durationText?: string } {
   const duration = GYG_DURATION.exec(line);
   const rawTitle = (duration ? line.slice(0, duration.index) : (line.split('•')[0] ?? line)).trim();
-  return { title: rawTitle.replace(GLUED_PLACE_PREFIX, '$1: '), durationText: duration?.[1] };
+  return { title: cleanTitle(rawTitle).replace(GLUED_PLACE_PREFIX, '$1: '), durationText: duration?.[1] };
 }
 
 function gygActivity(text: string, url: string): RawExperience | null {
