@@ -63,18 +63,6 @@ const SHAPE: Readonly<Record<Exclude<SceneId, 'video'>, { leadInSec: number; tai
   close: { leadInSec: 0.5, tailSec: 1.9, minSec: 4.5 },
 };
 
-/**
- * The lines as the film plays them. The narrator is heard only once every line has been recorded:
- * one spoken line followed by silence sounds like a fault. Until then her words are captions, and
- * a recorded line still keeps its measured length, so the cut does not move when her voice arrives.
- */
-export function narrated(lines: readonly Line[]): Line[] {
-  if (lines.every((line) => line.file !== undefined)) {
-    return [...lines];
-  }
-  return lines.map(({ file: _notYet, ...line }) => line);
-}
-
 /** How long an unvoiced line will take to say, going by its length. */
 export function estimateSeconds(text: string): number {
   return Math.max(SHORTEST_LINE_SEC, text.length / CHARACTERS_PER_SECOND);

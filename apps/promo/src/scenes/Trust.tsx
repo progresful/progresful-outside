@@ -48,7 +48,7 @@ export function Trust({ scene }: { scene: ScenePlan }) {
   // The facts are ticked off through the first sentence; the voice's own line is checked on the second.
   const firstTick = said(0.08);
   const perTick = Math.max(8, Math.round((said(0.52) - firstTick) / FACTS.length));
-  const voiceChecked = said(0.82);
+  const voiceChecked = said(0.88);
 
   return (
     <AbsoluteFill style={{ background: COLOR.paper }}>

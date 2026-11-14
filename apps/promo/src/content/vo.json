@@ -8,6 +8,55 @@
       "file": "vo/open-1.mp3",
       "durationSec": 3.576,
       "fingerprint": "3bf50ddd08c857eb"
+    },
+    {
+      "id": "open-2",
+      "scene": "listing",
+      "file": "vo/open-2.mp3",
+      "durationSec": 2.879,
+      "fingerprint": "2815747fe51ce93e"
+    },
+    {
+      "id": "badge-1",
+      "scene": "badge",
+      "file": "vo/badge-1.mp3",
+      "durationSec": 9.242,
+      "fingerprint": "6b553a15a614a3a4"
+    },
+    {
+      "id": "badge-2",
+      "scene": "badge",
+      "file": "vo/badge-2.mp3",
+      "durationSec": 2.183,
+      "fingerprint": "1c2251217fa4a0ad"
+    },
+    {
+      "id": "dates",
+      "scene": "dates",
+      "file": "vo/dates.mp3",
+      "durationSec": 6.734,
+      "fingerprint": "32082255c463c09c"
+    },
+    {
+      "id": "interests",
+      "scene": "interests",
+      "file": "vo/interests.mp3",
+      "durationSec": 3.762,
+      "fingerprint": "8b8eedfd8b950420"
+    },
+    {
+      "id": "trust",
+      "scene": "trust",
+      "file": "vo/trust.mp3",
+      "durationSec": 8.87,
+      "fingerprint": "0ddd07d13ee3b5d9"
+    },
+    {
+      "id": "close",
+      "scene": "close",
+      "file": "vo/close.mp3",
+      "durationSec": 3.019,
+      "fingerprint": "c346a7464200eff0"
     }
   ]
 }

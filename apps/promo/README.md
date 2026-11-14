@@ -12,8 +12,9 @@ pnpm --filter @outside/promo capture      # retake the opening screenshots (need
 pnpm --filter @outside/promo test
 ```
 
-Rendering uses whichever Chromium Remotion finds; pass `--browser-executable <path>` after the command to
-name one.
+Rendering uses whichever Chromium Remotion finds; add `-- --browser-executable <path>` to name one. After
+Remotion has rendered, ffmpeg (if it is installed) sets the sound to −16 LUFS, the loudness online video is
+played at; the speech as rendered sits near −21 and sounds faint beside anything else.
 
 ## What is real in it
 
@@ -35,10 +36,13 @@ ElevenLabs (voice "Lily", model `eleven_multilingual_v2`), saves one mp3 per lin
 lengths in `src/content/vo.json`. A line whose text has not changed is not voiced again, and what has been
 voiced is saved line by line.
 
-The film is timed from the narration: a scene lasts as long as what is said in it. A line that has no
-recording yet is timed by its length and shown as a caption. **The narrator is heard only once every line
-has a recording**; until then the film is captions throughout, with the product's own voice in the middle.
-So after topping up ElevenLabs: run `voiceover`, then `render`, and the same film comes out with her voice.
+The film is timed from the narration: a scene lasts as long as what is said in it. A line that has a
+recording is heard; one that has none yet is timed by its length and shown as a caption only. So a film
+rendered while lines are missing speaks in some places and is silent in others. Once ElevenLabs has credit:
+run `voiceover`, then `render`, and the same film comes out narrated throughout.
+
+The full script is 595 characters: that many credits with the default model, about half with
+`PROMO_MODEL_ID=eleven_flash_v2_5`, which sounds a little flatter. `PROMO_VOICE_ID` changes the voice.
 
 Captions stay on in either case.
 

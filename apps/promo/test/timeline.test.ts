@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SCENE_ORDER, VIDEO_SCENE_FRAMES, captionChunks, chunkAt, estimateSeconds, narrated, planFilm, type Line } from '../src/timeline';
+import { SCENE_ORDER, VIDEO_SCENE_FRAMES, captionChunks, chunkAt, estimateSeconds, planFilm, type Line } from '../src/timeline';
 
 const FPS = 30;
 const voiced = (id: string, scene: Line['scene'], text: string, durationSec: number): Line => ({ id, scene, text, durationSec, file: `vo/${id}.mp3` });
@@ -130,25 +130,3 @@ describe('chunkAt', () => {
     expect(chunkAt([], 0.5)).toBe('');
   });
 });
-
-describe('narrated', () => {
-  const first = voiced('open-1', 'listing', 'You have found a place to stay.', 3.5);
-  const second = voiced('open-2', 'listing', 'But a listing only shows you the room.', 2.6);
-  const silent = unvoiced('close', 'close', 'Outside.');
-
-  it('lets the narrator speak when every line has been recorded', () => {
-    expect(narrated([first, second])).toEqual([first, second]);
-  });
-
-  it('keeps her silent throughout while any line is still missing: one spoken line and then none sounds broken', () => {
-    const lines = narrated([first, silent, second]);
-
-    expect(lines.map((line) => line.file)).toEqual([undefined, undefined, undefined]);
-    expect(lines.every((line) => !('file' in line))).toBe(true);
-  });
-
-  it('still times a recorded line by its recording, so the cut does not change when the voice comes in', () => {
-    expect(narrated([first, silent]).map((line) => line.durationSec)).toEqual([3.5, undefined]);
-  });
-});
-

@@ -8,6 +8,7 @@
  *
  * The key is read from ELEVENLABS_API_KEY (the repo's .env) and is never printed.
  *   PROMO_VOICE_ID   the narrator's voice (default: see below)
+ *   PROMO_MODEL_ID   the ElevenLabs model (default: eleven_multilingual_v2)
  */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -17,8 +18,11 @@ import { fileURLToPath } from 'node:url';
 const API = 'https://api.elevenlabs.io/v1';
 /** "Lily": a warm British narrator from ElevenLabs' stock voices, distinct from George, who speaks inside the product. */
 const DEFAULT_VOICE_ID = 'pFZP5JQG7iQjIQuC4Bku';
-/** The slower, fuller model: the film is made once, so quality matters more than speed. */
-const MODEL_ID = 'eleven_multilingual_v2';
+/**
+ * The slower, fuller model: the film is made once, so quality matters more than speed. It costs a
+ * credit a character; PROMO_MODEL_ID=eleven_flash_v2_5 costs about half and sounds a little flatter.
+ */
+const MODEL_ID = process.env.PROMO_MODEL_ID?.trim() || 'eleven_multilingual_v2';
 /** 192 kbps needs a higher ElevenLabs plan than this account's (it answers output_format_not_allowed); 128 is what the product uses too. */
 const OUTPUT_FORMAT = 'mp3_44100_128';
 const VOICE_SETTINGS = { stability: 0.5, similarity_boost: 0.8, style: 0.15, use_speaker_boost: true, speed: 1.0 };

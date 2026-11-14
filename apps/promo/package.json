@@ -6,7 +6,7 @@
   "description": "The promotional film: a Remotion composition, its voice-over, and the real screenshots it opens on.",
   "scripts": {
     "studio": "remotion studio src/index.ts",
-    "render": "remotion render src/index.ts Promo out/outside-promo.mp4",
+    "render": "node scripts/render.mjs",
     "still": "remotion still src/index.ts Promo",
     "voiceover": "node --env-file=../../.env scripts/voiceover.mjs",
     "capture": "node scripts/capture.mjs",
