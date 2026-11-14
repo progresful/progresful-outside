@@ -121,11 +121,14 @@ describe('placePhotoQuery and wantsSeasonalPhoto', () => {
     expect(wantsSeasonalPhoto('nature', cold)).toBe(true);
     expect(wantsSeasonalPhoto('adventure', hot)).toBe(true);
     expect(wantsSeasonalPhoto('history', cold)).toBe(true);
+    // A castle found as a museum is still shown from the outside.
+    expect(wantsSeasonalPhoto('culture', cold)).toBe(true);
   });
 
-  it('keeps the usual photo indoors and in mild weather', () => {
+  it('keeps the usual photo for restaurants, bars and spas, and in mild weather', () => {
     expect(wantsSeasonalPhoto('food', cold)).toBe(false);
-    expect(wantsSeasonalPhoto('culture', cold)).toBe(false);
+    expect(wantsSeasonalPhoto('nightlife', cold)).toBe(false);
+    expect(wantsSeasonalPhoto('wellness', cold)).toBe(false);
     expect(wantsSeasonalPhoto('nature', mild)).toBe(false);
   });
 });

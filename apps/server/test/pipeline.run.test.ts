@@ -236,7 +236,7 @@ describe('runPipeline', () => {
     const snowy = async () => ({ facts: [snowyClimate], source: source('open-meteo-archive', 'Open-Meteo (past years)') });
     const ORIGINAL = 'https://www.tyrol.example/photos/park-in-snow.jpg';
     const COPY = 'https://ts1.mm.bing.net/th?id=OIP.park&w=1280&h=720&c=7&rs=1';
-    const found = vi.fn(async (_deps: unknown, p: { placeId: string }) => ({
+    const found = vi.fn(async (_deps: unknown, p: { placeId: string; placeName: string }) => ({
       facts: [{ id: `photo:${p.placeId}`, imageUrl: ORIGINAL, fallbackUrl: COPY, sourceId: 'bing-images' }],
       source: source('bing-images', 'Bing Images'),
     }));
@@ -253,12 +253,13 @@ describe('runPipeline', () => {
       return { ...base, sources: { ...base.sources, climate: vi.fn(snowy), placePhoto: vi.fn(found) } };
     }
 
-    it('searches a seasonal photo for the outdoor places only', async () => {
+    it('searches a seasonal photo for the places shown from outside, not for the restaurant', async () => {
       const d = deps();
 
       await runPipeline(d, request, () => {});
 
-      expect(d.sources.placePhoto).toHaveBeenCalledTimes(1);
+      const searched = vi.mocked(d.sources.placePhoto).mock.calls.map(([, params]) => params.placeName);
+      expect(searched.sort()).toEqual(['Museums Alpha', 'Nature Alpha']);
       expect(d.sources.placePhoto).toHaveBeenCalledWith(expect.anything(), {
         placeId: 'place:nature-a',
         placeName: 'Nature Alpha',

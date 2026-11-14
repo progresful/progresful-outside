@@ -208,6 +208,18 @@ describe('GET /api/videos/:id', () => {
     expect(res.json().data).toMatchObject({ status: 'failed', error: 'Could not build the video' });
   });
 
+  it('no longer has a video that an older version of the video template made', async () => {
+    const cache = createSqliteCacheStore(':memory:');
+    // How videos were stored before the template version became part of the key.
+    cache.set('video:0123456789abcdef', manifest, { fetchedAt: NOW });
+    const app = buildApp({ videos: { cache, jobs: createJobStore(), run: vi.fn<RunVideo>(), now: () => NOW } });
+
+    const res = await app.inject({ method: 'GET', url: '/api/videos/0123456789abcdef' });
+
+    // A tab still offering that video is told it is gone, and builds the current one instead.
+    expect(res.statusCode).toBe(404);
+  });
+
   it.each(['0123456789abcdef', 'not-an-id', '..%2F..%2Fetc'])('answers 404 for %s', async (id) => {
     const res = await harness().app.inject({ method: 'GET', url: `/api/videos/${id}` });
 

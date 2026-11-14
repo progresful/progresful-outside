@@ -27,8 +27,13 @@ const VIDEO_ID = /^[0-9a-f]{16}$/;
 const VIDEO_ID_LENGTH = 16;
 const GENERIC_FAILURE = 'Could not build the video';
 
+/**
+ * Where a finished video is kept. The template version is part of it: when the video's look or
+ * make-up changes, videos made before are simply no longer there, so a tab that still offers one
+ * is told it is gone and builds the current one.
+ */
 function manifestKey(videoId: string): string {
-  return `video:${videoId}`;
+  return `video:t${TEMPLATE_VERSION}:${videoId}`;
 }
 
 function statusOf(job: Job): VideoStatusResponse {

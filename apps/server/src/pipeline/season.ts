@@ -105,8 +105,12 @@ export function placeQuery(interest: InterestId, season: Season): PlaceQuery {
   return seasonal && seasonal !== usual ? { query: seasonal, fallback: usual } : { query: usual };
 }
 
-/** Interests whose places are out of doors, where the season shows in a photo. */
-const OUTDOOR_INTERESTS: ReadonlySet<InterestId> = new Set(['nature', 'adventure', 'water', 'history', 'family', 'shopping', 'events', 'gems']);
+/**
+ * Interests whose places are usually shown from outside, where the season shows in a photo.
+ * Museums are in: a castle found as a museum is pictured with its park. Restaurants, bars and
+ * spas are shown from inside and keep their own photo.
+ */
+const OUTDOOR_INTERESTS: ReadonlySet<InterestId> = new Set(['nature', 'adventure', 'water', 'history', 'culture', 'family', 'shopping', 'events', 'gems']);
 
 /** Whether a place's stock photo should be swapped for one taken in the season of the stay. */
 export function wantsSeasonalPhoto(interest: InterestId, season: Season): boolean {
