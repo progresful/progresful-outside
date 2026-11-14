@@ -2,10 +2,14 @@
  * Match patterns cannot wildcard a top-level domain, so every Airbnb domain the extension runs on
  * is listed here. The content script, host permissions and the player page all use this list.
  */
-export const AIRBNB_MATCHES: readonly string[] = [
+const AIRBNB_TLDS: readonly string[] = [
   'com', 'co.uk', 'ie', 'ca', 'com.au', 'co.nz', 'de', 'at', 'ch', 'fr', 'be', 'nl', 'es', 'pt', 'it', 'gr',
   'fi', 'se', 'no', 'dk', 'pl', 'cz', 'hu', 'com.br', 'mx', 'co.in', 'jp', 'co.kr', 'com.sg',
-].map((tld) => `https://www.airbnb.${tld}/*`);
+];
+
+export const AIRBNB_HOSTS: readonly string[] = AIRBNB_TLDS.map((tld) => `www.airbnb.${tld}`);
+
+export const AIRBNB_MATCHES: readonly string[] = AIRBNB_HOSTS.map((host) => `https://${host}/*`);
 
 export const BOOKING_MATCHES: readonly string[] = ['https://www.booking.com/*'];
 
