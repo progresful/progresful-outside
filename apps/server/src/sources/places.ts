@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { scrapeKey } from '../cache/keys';
 import { CreditsExhaustedError, realFetchedAt } from '../contextdev/client';
 import { NumericSchema, haversineM, round2 } from './geo';
+import { parseGoogleHours } from './hours';
 import { emptyResult, type LatLng, type SourceDeps, type SourceResult } from './types';
 
 export { haversineM } from './geo';
@@ -19,6 +20,8 @@ const RawPlaceSchema = z.object({
   latitude: NumericSchema,
   longitude: NumericSchema,
   google_image: z.url(),
+  google_hours: z.unknown().optional(),
+  google_category: z.string().nullish(),
 });
 
 export const MapsResultsSchema = z.object({ results: z.array(z.unknown()) });
@@ -59,11 +62,14 @@ export function toPlaceFact(raw: unknown, interest: InterestId, origin: LatLng, 
   }
   const place = parsed.data;
   const point = { lat: place.latitude, lng: place.longitude };
+  const hours = parseGoogleHours(place.google_hours);
+  const category = place.google_category?.trim();
   return {
     id: `place:${place.place_id}`,
     kind: 'place',
     interest,
     name: place.name,
+    ...(category ? { category } : {}),
     rating: place.rating,
     reviewCount: place.number_of_reviews,
     lat: point.lat,
@@ -71,6 +77,7 @@ export function toPlaceFact(raw: unknown, interest: InterestId, origin: LatLng, 
     imageUrl: place.google_image,
     distanceM: Math.round(haversineM(origin, point)),
     timezone: timezoneAt(point),
+    ...(hours ? { hours } : {}),
     sourceId,
   };
 }

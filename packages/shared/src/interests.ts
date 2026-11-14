@@ -23,22 +23,23 @@ export interface Interest {
   /** Fills "Finding … spots" in the progress line. */
   stageNoun: string;
   mapsQueries: readonly string[];
+  /** Words that mark a tour or activity title as belonging to this interest. Matched as whole words. */
   experienceKeywords: readonly string[];
 }
 
 export const INTERESTS: readonly Interest[] = [
-  { id: 'food', label: 'Food & drink', shortLabel: 'Food', stageNoun: 'food', mapsQueries: ['local restaurants', 'food market'], experienceKeywords: ['food tour', 'cooking class', 'tasting'] },
-  { id: 'nightlife', label: 'Nightlife', shortLabel: 'Nightlife', stageNoun: 'nightlife', mapsQueries: ['cocktail bar', 'live music bar'], experienceKeywords: ['pub crawl', 'night tour'] },
-  { id: 'culture', label: 'Art & museums', shortLabel: 'Museums', stageNoun: 'museum', mapsQueries: ['museum', 'art gallery'], experienceKeywords: ['museum tickets', 'guided tour'] },
-  { id: 'history', label: 'History & architecture', shortLabel: 'History', stageNoun: 'historic', mapsQueries: ['historic landmark', 'old town'], experienceKeywords: ['walking tour', 'heritage'] },
-  { id: 'nature', label: 'Nature & hikes', shortLabel: 'Nature', stageNoun: 'nature', mapsQueries: ['hiking trail', 'park', 'viewpoint'], experienceKeywords: ['hike', 'day trip', 'national park'] },
-  { id: 'water', label: 'Beaches & water', shortLabel: 'Beaches', stageNoun: 'beach', mapsQueries: ['beach', 'boat rental'], experienceKeywords: ['boat tour', 'surf lesson', 'kayak'] },
-  { id: 'adventure', label: 'Adventure & sports', shortLabel: 'Adventure', stageNoun: 'adventure', mapsQueries: ['climbing', 'bike rental'], experienceKeywords: ['rafting', 'zipline', 'bike tour'] },
-  { id: 'family', label: 'Family & kids', shortLabel: 'Family', stageNoun: 'family', mapsQueries: ['family attraction', 'zoo'], experienceKeywords: ['family tickets', 'aquarium'] },
-  { id: 'wellness', label: 'Wellness & spa', shortLabel: 'Wellness', stageNoun: 'wellness', mapsQueries: ['spa', 'sauna', 'thermal bath'], experienceKeywords: ['spa day', 'yoga'] },
-  { id: 'shopping', label: 'Shopping & markets', shortLabel: 'Shopping', stageNoun: 'shopping', mapsQueries: ['local market', 'shopping street'], experienceKeywords: ['craft workshop', 'shopping tour'] },
-  { id: 'events', label: 'Live music & events', shortLabel: 'Live music', stageNoun: 'live music', mapsQueries: ['concert venue', 'theatre'], experienceKeywords: ['concert tickets', 'show'] },
-  { id: 'gems', label: 'Hidden gems', shortLabel: 'Hidden gems', stageNoun: 'hidden', mapsQueries: ["locals' favourite", 'hidden gem'], experienceKeywords: ['off the beaten path', 'local guide'] },
+  { id: 'food', label: 'Food & drink', shortLabel: 'Food', stageNoun: 'food', mapsQueries: ['local restaurants', 'food market'], experienceKeywords: ['food', 'wine', 'tasting', 'tastings', 'cooking', 'baking', 'culinary', 'dinner', 'gastronomy'] },
+  { id: 'nightlife', label: 'Nightlife', shortLabel: 'Nightlife', stageNoun: 'nightlife', mapsQueries: ['cocktail bar', 'live music bar'], experienceKeywords: ['pub crawl', 'bar crawl', 'night', 'nightlife', 'party', 'cocktail'] },
+  { id: 'culture', label: 'Art & museums', shortLabel: 'Museums', stageNoun: 'museum', mapsQueries: ['museum', 'art gallery'], experienceKeywords: ['museum', 'gallery', 'art', 'exhibition', 'palace', 'monastery', 'tickets'] },
+  { id: 'history', label: 'History & architecture', shortLabel: 'History', stageNoun: 'historic', mapsQueries: ['historic landmark', 'old town'], experienceKeywords: ['history', 'historic', 'historical', 'heritage', 'walking tour', 'castle', 'old town', 'cathedral', 'ruins'] },
+  { id: 'nature', label: 'Nature & hikes', shortLabel: 'Nature', stageNoun: 'nature', mapsQueries: ['park', 'viewpoint', 'hiking trail'], experienceKeywords: ['hike', 'hiking', 'nature', 'national park', 'natural park', 'valley', 'mountain', 'waterfall', 'day trip'] },
+  { id: 'water', label: 'Beaches & water', shortLabel: 'Beaches', stageNoun: 'beach', mapsQueries: ['beach', 'boat rental'], experienceKeywords: ['boat', 'cruise', 'sailing', 'surf', 'kayak', 'beach', 'dolphin', 'snorkeling', 'catamaran'] },
+  { id: 'adventure', label: 'Adventure & sports', shortLabel: 'Adventure', stageNoun: 'adventure', mapsQueries: ['outdoor activities', 'bike rental', 'climbing'], experienceKeywords: ['bike', 'e-bike', 'quad', 'buggy', 'zipline', 'rafting', 'climbing', 'segway', 'jeep', 'tuk-tuk', 'horseback'] },
+  { id: 'family', label: 'Family & kids', shortLabel: 'Family', stageNoun: 'family', mapsQueries: ['family attraction', 'zoo'], experienceKeywords: ['family', 'kids', 'aquarium', 'zoo', 'oceanarium'] },
+  { id: 'wellness', label: 'Wellness & spa', shortLabel: 'Wellness', stageNoun: 'wellness', mapsQueries: ['spa', 'sauna', 'thermal bath'], experienceKeywords: ['spa', 'yoga', 'thermal', 'massage', 'wellness', 'hammam'] },
+  { id: 'shopping', label: 'Shopping & markets', shortLabel: 'Shopping', stageNoun: 'shopping', mapsQueries: ['local market', 'shopping street'], experienceKeywords: ['market', 'shopping', 'workshop', 'craft', 'tile'] },
+  { id: 'events', label: 'Live music & events', shortLabel: 'Live music', stageNoun: 'live music', mapsQueries: ['live music venue', 'concert venue', 'theatre'], experienceKeywords: ['concert', 'show', 'fado', 'live music', 'flamenco', 'opera', 'theatre'] },
+  { id: 'gems', label: 'Hidden gems', shortLabel: 'Hidden gems', stageNoun: 'hidden', mapsQueries: ["locals' favourite", 'hidden gem'], experienceKeywords: ['hidden', 'secret', 'local', 'locals', 'off the beaten path'] },
 ];
 
 export const MAX_INTERESTS = 5;

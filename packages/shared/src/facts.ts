@@ -33,6 +33,8 @@ export interface PlaceFact {
   kind: 'place';
   interest: InterestId;
   name: string;
+  /** What kind of place it is, as the source names it: "Food court". */
+  category?: string;
   rating: number;
   reviewCount: number;
   lat: number;
@@ -52,6 +54,7 @@ export interface ExperienceFact {
   currency: string;
   durationText?: string;
   rating?: number;
+  reviewCount?: number;
   url: string;
   imageUrl?: string;
   sourceId: string;
@@ -61,7 +64,12 @@ export interface EventFact {
   id: string;
   kind: 'event';
   title: string;
+  /** The date as it is shown and spoken: "15 November". */
   dateText: string;
+  /** First and last day as YYYY-MM-DD, when the source gives a full date. */
+  startDate?: string;
+  endDate?: string;
+  venue?: string;
   url: string;
   sourceId: string;
 }

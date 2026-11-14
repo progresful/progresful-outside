@@ -68,6 +68,12 @@ describe('toPlaceFact', () => {
     expect(fact?.distanceM).toBeLessThan(2_000);
   });
 
+  it('carries what kind of place it is, when Maps says', () => {
+    expect(toPlaceFact(rawPlace, 'food', lisbon, 's')?.category).toBe('Food court');
+    expect(toPlaceFact({ ...rawPlace, google_category: '  ' }, 'food', lisbon, 's')).not.toHaveProperty('category');
+    expect(toPlaceFact({ ...rawPlace, google_category: null }, 'food', lisbon, 's')).not.toHaveProperty('category');
+  });
+
   it('accepts numbers that arrive as strings', () => {
     const fact = toPlaceFact({ ...rawPlace, rating: '4.5', number_of_reviews: '1240' }, 'food', lisbon, 's');
     expect([fact?.rating, fact?.reviewCount]).toEqual([4.5, 1240]);
