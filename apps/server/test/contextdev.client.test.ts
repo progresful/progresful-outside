@@ -163,6 +163,30 @@ describe('context.dev client', () => {
     expect(replayFetch).not.toHaveBeenCalled();
   });
 
+  it('returns the markdown output when it was requested', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ url: 'https://example.com', markdown: { requested: true, success: true, data: '# Hi' } }));
+    const client = createContextDevClient({ apiKey: 'k', fetch: fetchMock });
+
+    const res = await client.scrape({ url: 'https://example.com', formats: { markdown: true } });
+
+    expect(res.markdown).toMatchObject({ success: true, data: '# Hi' });
+    expect(res.parsed).toMatchObject({ success: null, data: null });
+  });
+
+  it('holds back requests beyond the per-minute allowance until the minute has passed', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse(scrapeBody));
+    const client = createContextDevClient({ apiKey: 'k', fetch: fetchMock, maxPerMinute: 2 });
+
+    const all = Promise.all([1, 2, 3].map((n) => client.scrape({ url: `https://example.com/${n}`, formats: { parse: true } })));
+    await vi.advanceTimersByTimeAsync(59_000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(1_500);
+    await all;
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
   it('replay throws when nothing was recorded for the request', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'outside-fixtures-'));
     const client = createContextDevClient({ apiKey: 'k', fetch: vi.fn(), fixtures: { mode: 'replay', dir } });

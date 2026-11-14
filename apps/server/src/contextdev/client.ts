@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { TTL_MS } from '../cache/cacheStore';
 import type { FixtureMode } from '../config';
 import { readFixture, writeFixture } from './fixtures';
-import { createLimiter } from './limiter';
+import { createLimiter, createWindowLimiter } from './limiter';
 
 const BASE_URL = 'https://api.context.dev/v1';
 const DEFAULT_MAX_CONCURRENT = 20;
@@ -10,6 +10,7 @@ const DEFAULT_TIMEOUT_MS = 12_000;
 const MAX_ATTEMPTS = 3;
 const MAX_JITTER_MS = 250;
 const MAX_RETRY_AFTER_S = 60;
+const MINUTE_MS = 60_000;
 
 const EMPTY_OUTPUT = { success: null, data: null };
 
@@ -21,6 +22,7 @@ const OutputSchema = z.looseObject({
 const ScrapeResponseSchema = z.looseObject({
   url: z.string().default(''),
   parsed: OutputSchema.default(EMPTY_OUTPUT),
+  markdown: OutputSchema.default(EMPTY_OUTPUT),
   json: OutputSchema.default(EMPTY_OUTPUT),
   images: OutputSchema.default(EMPTY_OUTPUT),
   cache_metadata: z
@@ -44,6 +46,8 @@ export interface ContextDevClientOptions {
   apiKey: string;
   fetch?: typeof fetch;
   maxConcurrent?: number;
+  /** The account's requests-per-minute allowance. Requests beyond it wait instead of being rejected. */
+  maxPerMinute?: number;
   fixtures?: { mode: FixtureMode; dir: string };
 }
 
@@ -84,8 +88,10 @@ async function requestWithRetry(
   apiKey: string,
   path: string,
   body: Record<string, unknown>,
+  beforeAttempt: () => Promise<void>,
 ): Promise<unknown> {
   for (let attempt = 1; ; attempt += 1) {
+    await beforeAttempt();
     const res = await fetchFn(`${BASE_URL}${path}`, {
       method: 'POST',
       headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
@@ -116,12 +122,16 @@ export function createContextDevClient(options: ContextDevClientOptions): Contex
   const fetchFn = options.fetch ?? fetch;
   const limit = createLimiter(options.maxConcurrent ?? DEFAULT_MAX_CONCURRENT);
   const fixtures = options.fixtures ?? { mode: 'off' as const, dir: '' };
+  const minuteAllowance =
+    options.maxPerMinute === undefined
+      ? (): Promise<void> => Promise.resolve()
+      : createWindowLimiter({ max: options.maxPerMinute, windowMs: MINUTE_MS });
 
   const post = async (path: string, body: Record<string, unknown>): Promise<unknown> => {
     if (fixtures.mode === 'replay') {
       return readFixture(fixtures.dir, path, body);
     }
-    const result = await limit(() => requestWithRetry(fetchFn, options.apiKey, path, body));
+    const result = await limit(() => requestWithRetry(fetchFn, options.apiKey, path, body, minuteAllowance));
     if (fixtures.mode === 'record') {
       writeFixture(fixtures.dir, path, body, result);
     }
