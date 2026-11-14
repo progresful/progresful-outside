@@ -10,6 +10,7 @@ pnpm --filter @outside/promo studio       # scrub through it in the browser
 pnpm --filter @outside/promo voiceover    # voice the narrator's lines with ElevenLabs (needs credits)
 pnpm --filter @outside/promo capture      # retake the opening screenshots (needs `pnpm bundle` first)
 pnpm --filter @outside/promo test
+deploy/film.sh                            # put the rendered film on the server and print its address
 ```
 
 Rendering uses whichever Chromium Remotion finds; add `-- --browser-executable <path>` to name one. After

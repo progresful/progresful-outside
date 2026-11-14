@@ -8,6 +8,7 @@ dist-release
 apps/promo/out/
 apps/promo/public/capture/*.png
 apps/site/public/download/
+apps/site/public/promo/
 coverage
 .superpowers/
 .DS_Store
