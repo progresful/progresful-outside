@@ -5,7 +5,8 @@
  *   node e2e/live.mjs airbnb            # finds a Lisbon listing by itself (or: booking)
  *   node e2e/live.mjs <listing url>     # a specific Airbnb or Booking.com listing
  *
- * Set CHROMIUM=<path to a Chromium binary> to use one other than Playwright's own; HEADED=1 to watch.
+ * Set CHROMIUM=<path to a Chromium binary> to use one other than Playwright's own; HEADED=1 to watch;
+ * INTERESTS=water,nightlife to also change the interests afterwards and wait for the rebuilt video.
  * Screenshots and a page dump go to e2e/out/ (git-ignored).
  */
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
@@ -127,6 +128,27 @@ try {
     await page.waitForTimeout(600);
     log('overlay after Escape:', await page.locator('iframe[src^="chrome-extension://"]').count());
     await page.screenshot({ path: join(out, 'listing-after-close.png') });
+  }
+
+  if (ready && process.env.INTERESTS) {
+    const interests = process.env.INTERESTS.split(',');
+    const changed = Date.now();
+    await worker.evaluate((picked) => chrome.storage.sync.set({ interests: picked }), interests);
+    log('interests set to', interests.join(', '));
+    let seen = '';
+    let rebuilt = false;
+    let wasBusy = false;
+    for (let tick = 0; tick < 150 && !rebuilt; tick += 1) {
+      const text = (await badgeText(page).catch(() => null)) ?? '(no badge)';
+      if (text !== seen) {
+        log(`${((Date.now() - changed) / 1000).toFixed(1)}s badge: ${text}`);
+        seen = text;
+      }
+      wasBusy ||= !/^what.s outside$/i.test(text.trim());
+      rebuilt = wasBusy && /^what.s outside$/i.test(text.trim());
+      await page.waitForTimeout(300);
+    }
+    log(rebuilt ? 'rebuilt for the new interests' : 'no rebuild seen');
   }
 } finally {
   await context.close();
