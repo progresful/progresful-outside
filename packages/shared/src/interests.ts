@@ -27,6 +27,14 @@ export interface Interest {
   experienceKeywords: readonly string[];
 }
 
+/** What an active person books, whatever the season: the marketplaces only list what runs on the dates. */
+const ADVENTURE_WORDS = [
+  'bike', 'e-bike', 'ebike', 'mtb', 'quad', 'atv', 'buggy', 'jeep', 'off-road', 'zipline', 'zip line', 'rafting', 'canyoning',
+  'climbing', 'via ferrata', 'paragliding', 'skydiving', 'bungee', 'kayak', 'kayaking', 'surf', 'surfing', 'diving',
+  'skiing', 'ski-day', 'ski day', 'snowboard', 'snowboarding', 'snowshoe', 'snowshoeing', 'sledding', 'tobogganing', 'bobsled',
+  'segway', 'tuk-tuk', 'horseback',
+] as const;
+
 export const INTERESTS: readonly Interest[] = [
   { id: 'food', label: 'Food & drink', shortLabel: 'Food', stageNoun: 'food', mapsQueries: ['local restaurants', 'food market'], experienceKeywords: ['food', 'wine', 'tasting', 'tastings', 'cooking', 'baking', 'culinary', 'dinner', 'gastronomy'] },
   { id: 'nightlife', label: 'Nightlife', shortLabel: 'Nightlife', stageNoun: 'nightlife', mapsQueries: ['cocktail bar', 'live music bar'], experienceKeywords: ['pub crawl', 'bar crawl', 'night', 'nightlife', 'party', 'cocktail'] },
@@ -34,7 +42,7 @@ export const INTERESTS: readonly Interest[] = [
   { id: 'history', label: 'History & architecture', shortLabel: 'History', stageNoun: 'historic', mapsQueries: ['historic landmark', 'old town'], experienceKeywords: ['history', 'historic', 'historical', 'heritage', 'walking tour', 'castle', 'old town', 'cathedral', 'ruins'] },
   { id: 'nature', label: 'Nature & hikes', shortLabel: 'Nature', stageNoun: 'nature', mapsQueries: ['park', 'viewpoint', 'hiking trail'], experienceKeywords: ['hike', 'hiking', 'nature', 'national park', 'natural park', 'valley', 'mountain', 'waterfall', 'day trip'] },
   { id: 'water', label: 'Beaches & water', shortLabel: 'Beaches', stageNoun: 'beach', mapsQueries: ['beach', 'boat rental'], experienceKeywords: ['boat', 'cruise', 'sailing', 'surf', 'kayak', 'beach', 'dolphin', 'snorkeling', 'catamaran'] },
-  { id: 'adventure', label: 'Adventure & sports', shortLabel: 'Adventure', stageNoun: 'adventure', mapsQueries: ['outdoor activities', 'bike rental', 'climbing'], experienceKeywords: ['bike', 'e-bike', 'quad', 'buggy', 'zipline', 'rafting', 'climbing', 'segway', 'jeep', 'tuk-tuk', 'horseback'] },
+  { id: 'adventure', label: 'Adventure & sports', shortLabel: 'Adventure', stageNoun: 'adventure', mapsQueries: ['outdoor activities', 'bike rental', 'climbing'], experienceKeywords: ADVENTURE_WORDS },
   { id: 'family', label: 'Family & kids', shortLabel: 'Family', stageNoun: 'family', mapsQueries: ['family attraction', 'zoo'], experienceKeywords: ['family', 'kids', 'aquarium', 'zoo', 'oceanarium'] },
   { id: 'wellness', label: 'Wellness & spa', shortLabel: 'Wellness', stageNoun: 'wellness', mapsQueries: ['spa', 'sauna', 'thermal bath'], experienceKeywords: ['spa', 'yoga', 'thermal', 'massage', 'wellness', 'hammam'] },
   { id: 'shopping', label: 'Shopping & markets', shortLabel: 'Shopping', stageNoun: 'shopping', mapsQueries: ['local market', 'shopping street'], experienceKeywords: ['market', 'shopping', 'workshop', 'craft', 'tile'] },

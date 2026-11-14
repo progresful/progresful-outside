@@ -30,6 +30,8 @@ export interface Selection {
   climate: ClimateFact[];
   /** Photos of the place in season, best first: the first opens the video. */
   seasonPhotos: SeasonPhoto[];
+  /** The offer to book that is shown beside a place found for an activity, by the place's id. */
+  activityOffers?: ReadonlyMap<string, ExperienceFact>;
 }
 
 /** Sends a system and user prompt, returns the model's JSON matching the schema. Injected for tests. */
@@ -84,6 +86,7 @@ function describeFact(fact: Fact): Record<string, unknown> {
     case 'place':
       return {
         name: fact.name,
+        ...(fact.activity ? { activity: fact.activity.doing } : {}),
         ...(fact.category ? { what: fact.category } : {}),
         ...(fact.description ? { about: fact.description } : {}),
         rating: fact.rating,
@@ -134,7 +137,7 @@ function systemPrompt(sceneCount: number, place: NormalizedPlace, wordBudget: nu
     `Return exactly ${sceneCount} lines, one per scene, in scene order.`,
     'How to write:',
     '- Sound like a friend who knows the area: warm, concrete, a little excited. Plain spoken English.',
-    '- Activity scenes: say what the place is and how close it is; the rating may back it up. Start each one differently.',
+    '- Activity scenes: when the scene gives an activity, say what the viewer can do there, in those words, then how close it is. Otherwise say what the place is and how close it is. Start each one differently.',
     '- Experiences scene: one or two of the offers. Name the offer in a few plain words, then its own price, like "a Sintra day trip from €59".',
     '- Stay scene: what is on, or what weather to expect, while the guest is there.',
     opening,
@@ -188,6 +191,10 @@ function templateLine(scene: PlannedScene, facts: ReadonlyMap<string, Fact>, pla
     return fact?.kind === 'climate'
       ? `${place.city} in ${fact.month}: usually ${spokenDegrees(fact.tempMinC)} to ${spokenDegrees(fact.tempMaxC)} degrees, ${fact.conditions}.`
       : `Step outside in ${place.city}.`;
+  }
+  if (fact?.kind === 'place' && fact.activity) {
+    const doing = fact.activity.doing;
+    return `${doing.charAt(0).toUpperCase()}${doing.slice(1)} at ${fact.name}, ${spokenTravel(fact.distanceM)}.`;
   }
   if (fact?.kind === 'place') {
     return `${fact.name} is rated ${fact.rating}, ${spokenTravel(fact.distanceM)}.`;

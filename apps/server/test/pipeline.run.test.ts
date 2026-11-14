@@ -18,7 +18,7 @@ afterEach(() => {
 
 describe('runPipeline', () => {
   it('has a template version for the cache key, raised when the video gained its seasonal opening', () => {
-    expect(TEMPLATE_VERSION).toBe(3);
+    expect(TEMPLATE_VERSION).toBe(5);
   });
 
   it('emits stages in order and returns a valid manifest', async () => {
@@ -31,7 +31,8 @@ describe('runPipeline', () => {
       ['gathering', 'Reading the neighbourhood'],
       ['gathering', 'Finding food spots'],
       ['gathering', 'Finding museum spots'],
-      ['gathering', 'Finding nature spots'],
+      ['gathering', 'Finding hiking'],
+      ['gathering', 'Finding viewpoints'],
       ['gathering', 'Checking live prices'],
       ['writing', 'Writing the script'],
       ['voicing', 'Recording voiceover'],
@@ -112,42 +113,216 @@ describe('runPipeline', () => {
 
       await runPipeline(deps, { ...request, interests: ['nature', 'culture', 'adventure'] }, () => {});
 
-      expect(queriesOf(deps)).toEqual(['nature: winter activities', 'culture: museum', 'adventure: ski resort']);
+      // Winter things to do, the interests taking turns, within the four searches a video may make.
+      expect(queriesOf(deps)).toEqual([
+        'nature: winter hiking trail',
+        'culture: museum',
+        'adventure: ski resort',
+        'nature: cross-country ski trail',
+      ]);
     });
 
-    it('searches the usual way when it is not known', async () => {
+    it('searches for what can be done in any weather when it is not known', async () => {
       const deps = pipelineDeps();
 
       await runPipeline(deps, { ...request, interests: ['nature', 'culture', 'adventure'] }, () => {});
 
-      expect(queriesOf(deps)).toEqual(['nature: park', 'culture: museum', 'adventure: outdoor activities']);
+      expect(queriesOf(deps)).toEqual(['nature: hiking trail', 'culture: museum', 'adventure: bike park', 'nature: viewpoint']);
     });
 
-    it('falls back to the usual search when the seasonal one finds nothing nearby', async () => {
+    it('gives an active person several different things to do, each labelled', async () => {
+      const base = pipelineDeps();
+      const places = vi.fn<typeof base.sources.places>(async (_deps, params) => ({
+        facts: [placeFact(`spot-${params.query}`, { name: `Spot for ${params.query}`, interest: params.interest, ...(params.activity ? { activity: params.activity } : {}) })],
+        source: source(`google-maps:${params.interest}`, 'Google Maps'),
+      }));
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places } };
+
+      const manifest = await runPipeline(deps, { ...request, interests: ['adventure'] }, () => {});
+
+      const activities = manifest.scenes.filter((scene) => scene.type === 'activity');
+      expect(activities.map((scene) => [scene.kicker, scene.title])).toEqual([
+        ['Ski & snowboard', 'Spot for ski resort'],
+        ['Sledding', 'Spot for toboggan run'],
+        ['Ice skating', 'Spot for ice skating rink'],
+      ]);
+    });
+
+    it('leaves out a place that is only for the other half of the year', async () => {
       const base = pipelineDeps();
       const usual = vi.mocked(base.sources.places).getMockImplementation();
       const places = vi.fn<typeof base.sources.places>(async (sourceDeps, params) => {
-        if (params.query === 'ski resort') {
-          return { facts: [], source: null };
+        if (params.query !== 'toboggan run') {
+          return usual!(sourceDeps, params);
         }
-        if (params.query === 'winter activities') {
+        const tagged = { interest: params.interest, ...(params.activity ? { activity: params.activity } : {}) };
+        return {
+          facts: [
+            placeFact('summer-slide', { ...tagged, name: 'Sommerrodelbahn (Alpine Slide)', category: 'Summer toboggan run', rank: 0 }),
+            placeFact('winter-run', { ...tagged, name: 'Rumer Alm', category: 'Mountain cabin', rank: 1 }),
+          ],
+          source: source('google-maps:adventure', 'Google Maps'),
+        };
+      });
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places } };
+
+      const manifest = await runPipeline(deps, { ...request, interests: ['adventure'] }, () => {});
+
+      const sledding = manifest.scenes.find((scene) => scene.kicker === 'Sledding');
+      expect(sledding?.title).toBe('Rumer Alm');
+      expect(manifest.scenes.map((scene) => scene.title)).not.toContain('Sommerrodelbahn (Alpine Slide)');
+    });
+
+    it('leaves out a place that Maps offered for an activity when it is plainly for another one', async () => {
+      const base = pipelineDeps();
+      const usual = vi.mocked(base.sources.places).getMockImplementation();
+      const places = vi.fn<typeof base.sources.places>(async (sourceDeps, params) => {
+        if (params.query !== 'toboggan run') {
+          return usual!(sourceDeps, params);
+        }
+        const tagged = { interest: params.interest, ...(params.activity ? { activity: params.activity } : {}) };
+        return {
+          facts: [
+            placeFact('ski-jump', { ...tagged, name: 'Bergisel Ski Jump', category: 'Tourist attraction', rank: 0 }),
+            placeFact('winter-run', { ...tagged, name: 'Rodelbahn Rumer Alm', category: 'Mountain cabin', rank: 1 }),
+          ],
+          source: source('google-maps:adventure', 'Google Maps'),
+        };
+      });
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places } };
+
+      const manifest = await runPipeline(deps, { ...request, interests: ['adventure'] }, () => {});
+
+      expect(manifest.scenes.find((scene) => scene.kicker === 'Sledding')?.title).toBe('Rodelbahn Rumer Alm');
+      expect(manifest.scenes.map((scene) => scene.title)).not.toContain('Bergisel Ski Jump');
+    });
+
+    it('shows a business by its name, without the keywords tacked onto it', async () => {
+      const base = pipelineDeps();
+      const usual = vi.mocked(base.sources.places).getMockImplementation();
+      const places = vi.fn<typeof base.sources.places>(async (sourceDeps, params) => {
+        if (params.query !== 'toboggan run') {
+          return usual!(sourceDeps, params);
+        }
+        const tagged = { interest: params.interest, ...(params.activity ? { activity: params.activity } : {}) };
+        return {
+          facts: [placeFact('padded', { ...tagged, name: 'Rumer Alm - Rodelbahn - Restaurant - Rodelverleih', category: 'Store', rank: 0 })],
+          source: source('google-maps:adventure', 'Google Maps'),
+        };
+      });
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places } };
+
+      const manifest = await runPipeline(deps, { ...request, interests: ['adventure'] }, () => {});
+
+      expect(manifest.scenes.find((scene) => scene.kicker === 'Sledding')?.title).toBe('Rumer Alm');
+    });
+
+    it('falls back to the usual search when a seasonal one for a place-kind interest finds nothing nearby', async () => {
+      const base = pipelineDeps();
+      const usual = vi.mocked(base.sources.places).getMockImplementation();
+      const places = vi.fn<typeof base.sources.places>(async (sourceDeps, params) => {
+        if (params.query === 'cosy restaurant') {
           // Something was found, but a day's drive away.
-          return { facts: [placeFact('far', { interest: 'nature', distanceM: 300_000 })], source: source('google-maps:nature', 'Google Maps') };
+          return { facts: [placeFact('far', { interest: 'food', distanceM: 300_000 })], source: source('google-maps:food', 'Google Maps') };
         }
         return usual!(sourceDeps, params);
       });
       const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places } };
 
-      const manifest = await runPipeline(deps, { ...request, interests: ['nature', 'culture', 'adventure'] }, () => {});
+      const manifest = await runPipeline(deps, { ...request, interests: ['food', 'culture', 'history'] }, () => {});
 
-      expect(queriesOf(deps).sort()).toEqual([
-        'adventure: outdoor activities',
-        'adventure: ski resort',
-        'culture: museum',
-        'nature: park',
-        'nature: winter activities',
-      ]);
+      expect(queriesOf(deps).sort()).toEqual(['culture: museum', 'food: cosy restaurant', 'food: local restaurants', 'history: historic landmark']);
       expect(types(manifest).filter((type) => type === 'activity')).toHaveLength(3);
+    });
+
+    it('searches the interests broadly when the activities leave too little to show', async () => {
+      const base = pipelineDeps();
+      const usual = vi.mocked(base.sources.places).getMockImplementation();
+      const places = vi.fn<typeof base.sources.places>(async (sourceDeps, params) =>
+        // No ski area, toboggan run or ice rink anywhere near.
+        params.activity ? { facts: [], source: null } : usual!(sourceDeps, params),
+      );
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places } };
+
+      const manifest = await runPipeline(deps, { ...request, interests: ['adventure', 'nature'] }, () => {});
+
+      // "ski resort" was already asked as an activity, so adventure falls back to its usual search.
+      expect(queriesOf(deps)).toEqual(expect.arrayContaining(['adventure: ski resort', 'adventure: outdoor activities', 'nature: winter activities']));
+      expect(types(manifest).filter((type) => type === 'activity')).toHaveLength(3);
+    });
+
+    it('searches the interests broadly when what the activities found is not good enough to show', async () => {
+      const base = pipelineDeps();
+      const usual = vi.mocked(base.sources.places).getMockImplementation();
+      const places = vi.fn<typeof base.sources.places>(async (sourceDeps, params) =>
+        params.activity
+          ? {
+              // Plenty of places nearby, none with enough reviews to be shown.
+              facts: [1, 2, 3].map((n) =>
+                placeFact(`${params.query}-${n}`, { interest: params.interest, activity: params.activity, name: `Spot ${n} for ${params.query}`, reviewCount: 4 }),
+              ),
+              source: source(`google-maps:${params.interest}`, 'Google Maps'),
+            }
+          : usual!(sourceDeps, params),
+      );
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places } };
+
+      const manifest = await runPipeline(deps, { ...request, interests: ['adventure', 'nature'] }, () => {});
+
+      expect(queriesOf(deps)).toEqual(expect.arrayContaining(['adventure: outdoor activities', 'nature: winter activities']));
+      expect(types(manifest).filter((type) => type === 'activity')).toHaveLength(3);
+    });
+
+    it('does not take a town called Winterthur for a winter-only place', async () => {
+      const base = pipelineDeps();
+      const warm = async () => ({
+        facts: [{ ...snowyClimate, month: 'July', tempMinC: 15, tempMaxC: 27, snowDaysPercent: 0, conditions: 'mostly dry' as const }],
+        source: source('open-meteo-archive', 'Open-Meteo (past years)'),
+      });
+      const usual = vi.mocked(base.sources.places).getMockImplementation();
+      const places = vi.fn<typeof base.sources.places>(async (sourceDeps, params) => {
+        if (params.activity?.id !== 'swim') {
+          return usual!(sourceDeps, params);
+        }
+        return {
+          facts: [
+            placeFact('town-pool', { interest: params.interest, activity: params.activity, name: 'Freibad Winterthur', category: 'Outdoor swimming pool', rank: 0 }),
+            placeFact('winter-pool', { interest: params.interest, activity: params.activity, name: 'Winterbad am See', category: 'Swimming lake', rank: 1 }),
+          ],
+          source: source('google-maps:water', 'Google Maps'),
+        };
+      });
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(warm), places } };
+
+      const manifest = await runPipeline(deps, { ...request, interests: ['water'] }, () => {});
+
+      const titles = manifest.scenes.map((scene) => scene.title);
+      expect(titles).toContain('Freibad Winterthur');
+      expect(titles).not.toContain('Winterbad am See');
+    });
+
+    it('trusts a place that says nothing of the activity only as the first answer Maps gave', async () => {
+      const base = pipelineDeps();
+      const usual = vi.mocked(base.sources.places).getMockImplementation();
+      const places = vi.fn<typeof base.sources.places>(async (sourceDeps, params) => {
+        if (params.query !== 'toboggan run') {
+          return usual!(sourceDeps, params);
+        }
+        const tagged = { interest: params.interest, ...(params.activity ? { activity: params.activity } : {}) };
+        return {
+          facts: [
+            placeFact('first', { ...tagged, name: 'Rumer Alm', category: 'Mountain cabin', rank: 0 }),
+            placeFact('second', { ...tagged, name: 'Gasthof Post', category: 'Restaurant', rating: 4.9, reviewCount: 9_000, rank: 1 }),
+          ],
+          source: source('google-maps:adventure', 'Google Maps'),
+        };
+      });
+      const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places } };
+
+      const manifest = await runPipeline(deps, { ...request, interests: ['adventure'] }, () => {});
+
+      expect(manifest.scenes.find((scene) => scene.kicker === 'Sledding')?.title).toBe('Rumer Alm');
+      expect(manifest.scenes.map((scene) => scene.title)).not.toContain('Gasthof Post');
     });
 
     it('opens the video with it and cites where it came from', async () => {
@@ -160,21 +335,59 @@ describe('runPipeline', () => {
       expect(manifest.sources.map((entry) => entry.label)).toContain('Open-Meteo (past years)');
     });
 
+    describe('with an offer to book for one of the activities', () => {
+      const skiDay = { ...tour, id: 'exp:ski', title: 'Guided Ski Day', amount: 340, reviewCount: 300, sourceId: 'viator' };
+      const busTour = { ...tour, id: 'exp:bus', title: 'City Bus Tour', reviewCount: 9_000, sourceId: 'viator' };
+      const build = async (offers: Array<typeof tour>) => {
+        const base = pipelineDeps();
+        const places = vi.fn<typeof base.sources.places>(async (_deps, params) => ({
+          facts: [placeFact(`spot-${params.query}`, { name: `Spot for ${params.query}`, interest: params.interest, ...(params.activity ? { activity: params.activity } : {}) })],
+          source: source(`google-maps:${params.interest}`, 'Google Maps'),
+        }));
+        const experiences = vi.fn(async () => [{ facts: offers, source: source('viator', 'Viator') }]);
+        const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), places, experiences } };
+        return runPipeline(deps, { ...request, interests: ['adventure'] }, () => {});
+      };
+
+      it('shows it beside that activity, with its live price', async () => {
+        const manifest = await build([busTour, skiDay]);
+        const skiing = manifest.scenes.find((scene) => scene.kicker === 'Ski & snowboard');
+
+        expect(skiing?.items).toEqual([{ title: 'Guided Ski Day', detail: 'from €340' }]);
+        expect(skiing?.factIds).toEqual(['place:spot-ski resort', 'exp:ski']);
+        expect(manifest.scenes.find((scene) => scene.kicker === 'Sledding')).not.toHaveProperty('items');
+      });
+
+      it('does not list it a second time among the experiences', async () => {
+        const manifest = await build([busTour, skiDay]);
+
+        expect(manifest.scenes.find((scene) => scene.type === 'experiences')?.items?.map((item) => item.title)).toEqual(['City Bus Tour']);
+      });
+
+      it('credits the marketplace even when that offer is all the video shows from it', async () => {
+        const manifest = await build([skiDay]);
+
+        expect(types(manifest)).not.toContain('experiences');
+        expect(manifest.sources.map((cited) => cited.label)).toContain('Viator');
+      });
+    });
+
     it('prefers a bookable offer that suits it', async () => {
       const base = pipelineDeps();
       const offers = [
         { ...tour, id: 'exp:a', title: 'City Bus Tour', reviewCount: 9_000 },
         { ...tour, id: 'exp:b', title: 'Old Town Walk', reviewCount: 8_000 },
         { ...tour, id: 'exp:c', title: 'Harbour Stroll', reviewCount: 7_000 },
-        { ...tour, id: 'exp:d', title: 'Snowshoe Hike', reviewCount: 90 },
+        { ...tour, id: 'exp:d', title: 'Husky Ride', reviewCount: 90 },
       ];
       const experiences = vi.fn(async () => [{ facts: offers, source: source('viator', 'Viator') }]);
       const deps = { ...base, sources: { ...base.sources, climate: vi.fn(snowy), experiences } };
 
       const manifest = await runPipeline(deps, request, () => {});
 
-      // None of the four matches food, museums or nature; only the season lifts the least-reviewed one in.
-      expect(manifest.scenes.find((scene) => scene.type === 'experiences')?.items?.map((item) => item.title)).toContain('Snowshoe Hike');
+      // None of the four matches food, museums or nature, nor an activity that was searched for;
+      // only the season lifts the least-reviewed one in.
+      expect(manifest.scenes.find((scene) => scene.type === 'experiences')?.items?.map((item) => item.title)).toContain('Husky Ride');
     });
 
     it('still builds the video when it and the seasonal photo cannot be fetched', async () => {
@@ -264,7 +477,7 @@ describe('runPipeline', () => {
         placeId: 'place:nature-a',
         placeName: 'Nature Alpha',
         city: 'Lisbon',
-        query: 'Nature Alpha Lisbon winter snow',
+        query: 'Nature Alpha Lisbon snowshoeing winter snow',
       });
     });
 
@@ -339,7 +552,7 @@ describe('runPipeline', () => {
 
   it('shows at most three experiences, chosen for the interests', async () => {
     const base = pipelineDeps();
-    const prices = { 'Food Tour': 50, 'Museum Tickets': 40, 'Hiking Day Trip': 30, 'Bus Tour': 5, 'Quad Ride': 6 };
+    const prices = { 'Food Tour': 50, 'Museum Tickets': 40, 'Valley Day Trip': 30, 'Bus Tour': 5, 'Quad Ride': 6 };
     const offers = Object.entries(prices).map(([title, amount]) => ({ ...tour, id: `exp:${title}`, title, amount }));
     const deps = { ...base, sources: { ...base.sources, experiences: vi.fn(async () => [{ facts: offers, source: source('viator', 'Viator') }]) } };
 
@@ -347,7 +560,7 @@ describe('runPipeline', () => {
 
     const shown = manifest.scenes.find((scene) => scene.type === 'experiences')?.items?.map((item) => item.title);
     // The cheapest two match none of food, museums or nature; the three that do are listed cheapest first.
-    expect(shown).toEqual(['Hiking Day Trip', 'Museum Tickets', 'Food Tour']);
+    expect(shown).toEqual(['Valley Day Trip', 'Museum Tickets', 'Food Tour']);
   });
 
   it('still succeeds when experiences and events throw', async () => {

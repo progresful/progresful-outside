@@ -231,6 +231,29 @@ describe('writeLines', () => {
   });
 });
 
+describe('a place that is somewhere to do something', () => {
+  const skiing = { id: 'ski', label: 'Ski & snowboard', doing: 'skiing and snowboarding' };
+  const resort = { ...park, name: 'Axamer Lizum', interest: 'adventure' as const, activity: skiing, distanceM: 19_000 };
+  const active = selection({ places: [resort, market, museum] });
+
+  it('tells the model what the viewer can do there', async () => {
+    const complete = vi.fn().mockResolvedValue({ lines: goodLines });
+
+    await writeLines(complete, planScenes(active), factMap(active), active.place, 58);
+
+    const [system, user] = complete.mock.calls[0] as [string, string];
+    expect(user).toContain('"activity": "skiing and snowboarding"');
+    expect(system).toContain('say what the viewer can do there');
+  });
+
+  it('names the activity in the fallback script', () => {
+    const lines = templateLines(planScenes(active), factMap(active), active.place);
+
+    expect(lines[1]).toBe('Skiing and snowboarding at Axamer Lizum, about 30 minutes by car.');
+    expect(validateLines(lines, planScenes(active), factMap(active), 65)).toEqual({ ok: true });
+  });
+});
+
 describe('the accuracy guard on claims that are not numbers', () => {
   const sintra = { ...tour, id: 'exp:sintra', title: 'Sintra and Cascais Day Trip', amount: 15 };
   const fado = { ...cruise, id: 'exp:fado', title: 'Fado Show with Dinner', amount: 59, durationText: undefined };

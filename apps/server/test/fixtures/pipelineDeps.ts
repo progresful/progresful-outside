@@ -56,7 +56,7 @@ export function pipelineDeps(overrides: Partial<PipelineDeps> = {}): PipelineDep
     sources: {
       places: vi.fn(async (_deps, p) => {
         const label = interestById(p.interest).shortLabel;
-        const shared = { interest: p.interest, sourceId: `google-maps:${p.interest}` };
+        const shared = { interest: p.interest, sourceId: `google-maps:${p.interest}`, ...(p.activity ? { activity: p.activity } : {}) };
         return {
           facts: [
             placeFact(`${p.interest}-a`, { ...shared, name: `${label} Alpha`, rating: 4.6 }),

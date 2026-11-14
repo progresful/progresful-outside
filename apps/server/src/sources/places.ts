@@ -1,4 +1,4 @@
-import type { InterestId, PlaceFact, Source } from '@outside/shared';
+import type { InterestId, PlaceActivity, PlaceFact, Source } from '@outside/shared';
 import tzlookup from 'tz-lookup';
 import { z } from 'zod';
 import { scrapeKey } from '../cache/keys';
@@ -40,6 +40,8 @@ export interface PlacesParams {
   interest: InterestId;
   /** What to search Maps for: the interest's usual query, or one that suits the season. */
   query: string;
+  /** Set when the search is for somewhere to do an activity; the places found are marked with it. */
+  activity?: PlaceActivity;
   locationText: string;
   origin: LatLng;
 }
@@ -103,6 +105,27 @@ export function toPlaceFact(raw: unknown, interest: InterestId, origin: LatLng, 
   };
 }
 
+/** A name longer than this is checked for keywords tacked onto it. */
+const LONG_NAME_CHARS = 36;
+/** A single word shorter than this before the separator is a town or a keyword, not the business. */
+const MIN_ONE_WORD_NAME_CHARS = 8;
+const NAME_SEPARATOR = /\s+[-–—·]\s+|\s*[|•]\s*/u;
+
+/**
+ * Businesses pad their Maps name with what they sell: "SOURCE TO SEA - Kayak School - Shop -
+ * Rafting". A name that long is cut back to what stands before the first separator; one of
+ * ordinary length that merely has a dash in it ("Innsbruck - Nordkette") is left alone, and so is
+ * one whose first part is a single short word ("Lagos | Boat Trips…", "Rafting - Canyoning…").
+ */
+export function shortName(name: string): string {
+  if (name.length <= LONG_NAME_CHARS) {
+    return name;
+  }
+  const head = name.split(NAME_SEPARATOR)[0]?.trim() ?? '';
+  const isName = /\s/u.test(head) || head.length >= MIN_ONE_WORD_NAME_CHARS;
+  return isName && head.length < name.length ? head : name;
+}
+
 /** Cached places are shared by nearby listings, so distances are always recomputed for the asking listing. */
 function withDistances(result: SourceResult<PlaceFact>, origin: LatLng): SourceResult<PlaceFact> {
   return {
@@ -136,6 +159,20 @@ async function scrapePlaces(
   return result;
 }
 
+/**
+ * The same Maps results serve a search made for an activity and one made for the interest at
+ * large, so what a place is "for" is stamped on per asker, never stored.
+ */
+function forAsker(result: SourceResult<PlaceFact>, p: PlacesParams): SourceResult<PlaceFact> {
+  const facts = withDistances(result, p.origin).facts.map(({ activity: _stored, ...fact }, index) => ({
+    ...fact,
+    // Results stored before positions were recorded still hold Maps' order.
+    rank: fact.rank ?? index,
+    ...(p.activity ? { activity: p.activity } : {}),
+  }));
+  return { ...result, facts };
+}
+
 /** Places for one interest near the listing. A failed scrape yields nothing; exhausted credits propagate. */
 export async function fetchPlaces(deps: SourceDeps, p: PlacesParams): Promise<SourceResult<PlaceFact>> {
   const sourceId = `google-maps:${p.interest}`;
@@ -147,11 +184,11 @@ export async function fetchPlaces(deps: SourceDeps, p: PlacesParams): Promise<So
   });
   const cached = deps.cache.get<SourceResult<PlaceFact>>(key, deps.now());
   if (cached) {
-    return withDistances(cached.value, p.origin);
+    return forAsker(cached.value, p);
   }
   try {
     const fresh = await deps.dedupe(key, () => scrapePlaces(deps, p, sourceId, key));
-    return withDistances(fresh, p.origin);
+    return forAsker(fresh, p);
   } catch (error: unknown) {
     if (error instanceof CreditsExhaustedError) {
       throw error;

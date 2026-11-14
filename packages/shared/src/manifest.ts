@@ -23,8 +23,12 @@ export const SceneSchema = z.object({
   startFrame: z.number().int().min(0),
   durationInFrames: z.number().int().min(1),
   imageUrl: z.string().optional(),
+  /** A short label above the title: the activity a place is for. */
+  kicker: z.string().optional(),
   title: z.string(),
   subtitle: z.string().optional(),
+  /** A line of plain description under the subtitle: what the place is like, in its source's words. */
+  note: z.string().optional(),
   items: z.array(z.object({ title: z.string(), detail: z.string() })).optional(),
   captions: z.array(CaptionWordSchema),
   factIds: z.array(z.string()),

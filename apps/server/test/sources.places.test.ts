@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
+import { scrapeKey } from '../src/cache/keys';
 import { CreditsExhaustedError } from '../src/contextdev/client';
-import { fetchPlaces, haversineM, placesUrl, toPlaceFact } from '../src/sources/places';
+import { fetchPlaces, shortName, haversineM, placesUrl, toPlaceFact } from '../src/sources/places';
 import { NOW, makeDeps, stubClient } from './helpers';
 
 const lisbon = { lat: 38.7223, lng: -9.1393 };
@@ -130,6 +131,49 @@ describe('toPlaceFact', () => {
 describe('fetchPlaces', () => {
   const params = { interest: 'food' as const, query: 'local restaurants', locationText: 'Lisbon, Portugal', origin: lisbon };
 
+  it('marks the places with the activity they were searched for', async () => {
+    const scrape = vi.fn().mockResolvedValue(scrapeResponse([rawPlace]));
+    const activity = { id: 'ski', label: 'Ski & snowboard', doing: 'skiing and snowboarding' };
+
+    const result = await fetchPlaces(makeDeps({ client: stubClient({ scrape }) }), { ...params, interest: 'adventure', query: 'ski resort', activity });
+
+    expect(result.facts[0]).toMatchObject({ interest: 'adventure', activity });
+    expect((await fetchPlaces(makeDeps({ client: stubClient({ scrape }) }), params)).facts[0]).not.toHaveProperty('activity');
+  });
+
+  it('marks places with the activity of whichever search asks for them, cached or not', async () => {
+    const scrape = vi.fn().mockResolvedValue(scrapeResponse([rawPlace]));
+    const deps = makeDeps({ client: stubClient({ scrape }) });
+    const activity = { id: 'ski', label: 'Ski & snowboard', doing: 'skiing and snowboarding' };
+    const skiSearch = { ...params, interest: 'adventure' as const, query: 'ski resort' };
+
+    const plain = await fetchPlaces(deps, skiSearch);
+    const tagged = await fetchPlaces(deps, { ...skiSearch, activity });
+    const plainAgain = await fetchPlaces(deps, skiSearch);
+
+    expect(scrape).toHaveBeenCalledTimes(1);
+    expect(plain.facts[0]).not.toHaveProperty('activity');
+    expect(tagged.facts[0]?.activity).toEqual(activity);
+    expect(plainAgain.facts[0]).not.toHaveProperty('activity');
+  });
+
+  it('gives places that were stored without their position the place they hold in the list', async () => {
+    const scrape = vi.fn();
+    const deps = makeDeps({ client: stubClient({ scrape }) });
+    // What the cache holds from before positions were recorded: Maps' order, but no rank.
+    const stored = ['First', 'Second', 'Third'].map((name, index) => {
+      const { rank: _rank, ...fact } = toPlaceFact({ ...rawPlace, place_id: `id-${index}`, name }, 'food', lisbon, 'google-maps:food', index)!;
+      return fact;
+    });
+    const key = scrapeKey('places', { interest: 'food', query: 'local restaurants', lat: 38.72, lng: -9.14 });
+    deps.cache.set(key, { facts: stored, source: null }, { fetchedAt: NOW });
+
+    const result = await fetchPlaces(deps, params);
+
+    expect(scrape).not.toHaveBeenCalled();
+    expect(result.facts.map((fact) => [fact.name, fact.rank])).toEqual([['First', 0], ['Second', 1], ['Third', 2]]);
+  });
+
   it('remembers the order Maps returned the places in', async () => {
     const second = { ...rawPlace, place_id: 'ChIJdef', name: 'Second' };
     const scrape = vi.fn().mockResolvedValue(scrapeResponse([rawPlace, { name: 'broken' }, second]));
@@ -218,5 +262,29 @@ describe('fetchPlaces', () => {
     const deps = makeDeps({ client: stubClient({ scrape }) });
 
     await expect(fetchPlaces(deps, params)).rejects.toBeInstanceOf(CreditsExhaustedError);
+  });
+});
+
+describe('shortName', () => {
+  it('keeps what comes before the first separator of a long name', () => {
+    expect(shortName('SOURCE TO SEA - Kayak School - Shop - Rafting')).toBe('SOURCE TO SEA');
+    expect(shortName('Quad Adventures Algarve | Buggy Tours | Jeep Safari')).toBe('Quad Adventures Algarve');
+    expect(shortName('Outdoorplanet - Rafting, Canyoning and Via Ferrata Tours')).toBe('Outdoorplanet');
+  });
+
+  it('leaves a name of ordinary length alone, dash or not', () => {
+    expect(shortName('Innsbruck - Nordkette')).toBe('Innsbruck - Nordkette');
+    expect(shortName('Alpenzoo Innsbruck - Tirol')).toBe('Alpenzoo Innsbruck - Tirol');
+  });
+
+  it('does not cut a name back to a town or to one common word', () => {
+    expect(shortName('Algarve: Quinta Quads & Buggy Tours Lagos')).toBe('Algarve: Quinta Quads & Buggy Tours Lagos');
+    expect(shortName('Rafting - Canyoning Tirol Adventures Center Tux')).toBe('Rafting - Canyoning Tirol Adventures Center Tux');
+    expect(shortName('Lagos | Boat Trips, Kayak Tours and Dolphin Watching')).toBe('Lagos | Boat Trips, Kayak Tours and Dolphin Watching');
+  });
+
+  it('leaves a long name alone when it has no separator, or nothing worth keeping before it', () => {
+    expect(shortName('Leutascher Geisterklamm und Wasserfallsteig')).toBe('Leutascher Geisterklamm und Wasserfallsteig');
+    expect(shortName('A - Rafting, Canyoning, Kayak School and Outdoor Shop')).toBe('A - Rafting, Canyoning, Kayak School and Outdoor Shop');
   });
 });

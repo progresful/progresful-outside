@@ -121,9 +121,13 @@ function wintry(season: Season): boolean {
   return season.name === 'winter' && (season.kind === 'snowy' || season.kind === 'cold');
 }
 
-/** The image search for one place in the season of the stay: "Innsbrucker Hofgarten Innsbruck winter snow". */
-export function placePhotoQuery(placeName: string, city: string, season: Season): string {
-  return `${placeName} ${city} ${season.name}${wintry(season) ? ' snow' : ''}`;
+/**
+ * The image search for one place in the season of the stay: "Innsbrucker Hofgarten Innsbruck
+ * winter snow", or with what is done there: "Axamer Lizum Innsbruck skiing winter snow".
+ */
+export function placePhotoQuery(placeName: string, city: string, season: Season, activityWord?: string): string {
+  const doing = activityWord ? `${activityWord} ` : '';
+  return `${placeName} ${city} ${doing}${season.name}${wintry(season) ? ' snow' : ''}`;
 }
 
 /** The search for a photo of the place as it looks at that time of year. */

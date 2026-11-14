@@ -1,6 +1,8 @@
 import type { EventFact, ExperienceFact, InterestId, PlaceFact } from '@outside/shared';
 import { describe, expect, it } from 'vitest';
-import { MIN_PLACES, scorePlace, selectEvents, selectExperiences, selectPlaces, travelLabel } from '../src/pipeline/select';
+import { placeSearches, type Activity } from '../src/pipeline/activities';
+import { seasonOf } from '../src/pipeline/season';
+import { MIN_PLACES, pairOffers, scorePlace, selectEvents, selectExperiences, selectPlaces, spokenTravel, travelLabel } from '../src/pipeline/select';
 
 function place(id: string, interest: InterestId, overrides: Partial<PlaceFact> = {}): PlaceFact {
   return {
@@ -147,11 +149,90 @@ describe('travelLabel', () => {
 
   it('labels driving beyond 2 km', () => {
     expect(travelLabel(2_001)).toBe('≈ 6 min drive');
-    expect(travelLabel(9_000)).toBe('≈ 24 min drive');
+    expect(travelLabel(9_000)).toBe('≈ 19 min drive');
+  });
+
+  it('drives faster once out of town and faster still on a long run, so a ski area 45 minutes away is not called an hour and a half', () => {
+    expect(travelLabel(34_000)).toBe('≈ 45 min drive');
+    expect(travelLabel(39_000)).toBe('≈ 50 min drive');
+  });
+
+  it('rounds a longer drive to five minutes, in writing and in speech', () => {
+    expect(travelLabel(19_000)).toBe('≈ 30 min drive');
+    expect(spokenTravel(19_000)).toBe('about 30 minutes by car');
   });
 
   it('never says zero minutes', () => {
     expect(travelLabel(0)).toBe('≈ 1 min walk');
+  });
+});
+
+describe('selectPlaces for planned activity searches', () => {
+  const season = seasonOf(
+    { id: 'climate:stay', kind: 'climate', month: 'January', tempMinC: -6, tempMaxC: 3, wetDaysPercent: 40, snowDaysPercent: 30, conditions: 'some snow', sourceId: 'open-meteo-archive' },
+    { start: '2027-01-15', end: '2027-01-20', fromListing: true },
+    47,
+  );
+  const searches = placeSearches(['adventure'], season);
+  const [ski, sled, skate] = searches.map((search) => search.activity) as [Activity, Activity, Activity];
+  const doing = (activity: Activity, id: string, overrides: Partial<PlaceFact> = {}): PlaceFact =>
+    place(id, 'adventure', { activity: { id: activity.id, label: activity.label, doing: activity.doing }, ...overrides });
+
+  it('shows one place for each activity, in the order they were searched', () => {
+    const places = [
+      doing(skate, 'rink', { distanceM: 2_000 }),
+      doing(ski, 'big-resort', { reviewCount: 9_000, distanceM: 20_000 }),
+      doing(ski, 'small-resort', { reviewCount: 800, distanceM: 15_000 }),
+      doing(sled, 'toboggan-run', { reviewCount: 300, distanceM: 8_000 }),
+    ];
+
+    expect(names(selectPlaces(places, ['adventure'], searches))).toEqual(['big-resort', 'toboggan-run', 'rink']);
+  });
+
+  it('lets an activity be as far away as people travel for it', () => {
+    const glacier = doing(ski, 'glacier', { distanceM: 38_000 });
+    const tooFar = doing(ski, 'another-valley', { distanceM: 41_000 });
+    const farRink = doing(skate, 'far-rink', { distanceM: 16_000 });
+
+    expect(names(selectPlaces([glacier, tooFar, farRink], ['adventure'], searches))).toEqual(['glacier']);
+  });
+
+  it('accepts fewer reviews for an activity than for a sight', () => {
+    const run = doing(sled, 'quiet-run', { reviewCount: 12 });
+    const cafe = place('quiet-cafe', 'food', { reviewCount: 12 });
+
+    expect(names(selectPlaces([run, cafe], ['adventure', 'food'], searches))).toEqual(['quiet-run']);
+  });
+
+  it('does not let a short drive count against a ski area the way it would against a café', () => {
+    const resort = doing(ski, 'resort', { reviewCount: 5_000, distanceM: 20_000 });
+    const hill = doing(ski, 'village-hill', { reviewCount: 60, distanceM: 2_000 });
+
+    expect(names(selectPlaces([hill, resort], ['adventure'], searches))[0]).toBe('resort');
+  });
+
+  it('trusts only what Maps listed first or second for an activity', () => {
+    // "cross-country ski trail" lists a real trail first, then drifts to every famous ski lift.
+    const trail = doing(sled, 'real-run', { reviewCount: 17, rank: 0 });
+    const famous = doing(sled, 'famous-cable-car', { reviewCount: 5_600, rank: 5 });
+    const second = doing(sled, 'second-run', { reviewCount: 40, rank: 1 });
+
+    expect(names(selectPlaces([famous, trail, second], ['adventure'], searches))).toEqual(['real-run', 'second-run']);
+  });
+
+  it('takes the first place Maps listed for an activity when it is good enough', () => {
+    const first = doing(ski, 'first', { reviewCount: 60, rank: 0 });
+    const secondAndFamous = doing(ski, 'second', { reviewCount: 9_000, rank: 1 });
+    const firstButUnrated = doing(skate, 'unrated-rink', { reviewCount: 3, rank: 0 });
+    const secondRink = doing(skate, 'rink', { reviewCount: 200, rank: 1 });
+
+    expect(names(selectPlaces([secondAndFamous, first, firstButUnrated, secondRink], ['adventure'], searches))).toEqual(['first', 'rink', 'second']);
+  });
+
+  it('fills up with a second place for an activity only after every activity has had its turn', () => {
+    const places = [doing(ski, 'resort-a', { reviewCount: 9_000 }), doing(ski, 'resort-b', { reviewCount: 8_000 }), doing(sled, 'run', { reviewCount: 100 })];
+
+    expect(names(selectPlaces(places, ['adventure'], searches))).toEqual(['resort-a', 'run', 'resort-b']);
   });
 });
 
@@ -261,9 +342,29 @@ describe('selectExperiences', () => {
 
     expect(titles(selectExperiences(offers, ['food'], ['ski', 'snowshoe']))).toEqual([
       'Ski Day Pass',
+      'Snowshoe Hike with a Guide',
       'Food and Wine Walking Tour',
-      'Sintra Day Trip',
     ]);
+  });
+
+  it('puts up to two offers for the planned activities first', () => {
+    const offers = [
+      offer('Sintra Day Trip', { reviewCount: 20_000 }),
+      offer('Snowshoe Hike with a Guide', { reviewCount: 60 }),
+      offer('Ski Day Pass', { reviewCount: 300 }),
+      offer('Sleigh Ride', { reviewCount: 90 }),
+    ];
+
+    expect(titles(selectExperiences(offers, [], ['ski', 'snowshoe', 'sleigh']))).toEqual(['Ski Day Pass', 'Sleigh Ride', 'Sintra Day Trip']);
+  });
+
+  it('counts what an active person books as adventure', () => {
+    const active = ['Tandem Paragliding Flight', 'Guided Ski-Day', 'Canyoning for Beginners', 'Scenic eBike Tour', 'Snowshoeing in the Valley'];
+
+    for (const title of active) {
+      const offers = [offer('Old Town Walking Tour', { reviewCount: 9_000 }), offer(title, { reviewCount: 30 })];
+      expect(titles(selectExperiences(offers, ['adventure']))[0]).toBe(title);
+    }
   });
 
   it('chooses as before when nothing suits the season', () => {
@@ -276,6 +377,108 @@ describe('selectExperiences', () => {
     const offers = ['A', 'B', 'C', 'D', 'E'].map((title) => offer(title));
 
     expect(selectExperiences(offers, [])).toHaveLength(3);
+  });
+});
+
+describe('pairOffers', () => {
+  function offer(title: string, overrides: Partial<ExperienceFact> = {}): ExperienceFact {
+    return {
+      id: `exp:test:${title}`,
+      kind: 'experience',
+      title,
+      amount: 50,
+      currency: 'EUR',
+      rating: 4.8,
+      reviewCount: 500,
+      url: `https://www.viator.com/tours/${encodeURIComponent(title)}`,
+      sourceId: 'viator',
+      ...overrides,
+    };
+  }
+  const skiing = { id: 'ski', label: 'Ski & snowboard', doing: 'skiing and snowboarding' };
+  const snowshoeing = { id: 'snowshoe', label: 'Snowshoe & winter walks', doing: 'snowshoeing and winter walks' };
+  const words = new Map<string, readonly string[]>([
+    ['ski', ['skiing', 'ski day', 'snowboard']],
+    ['snowshoe', ['snowshoe', 'snowshoeing']],
+  ]);
+  const glacier = place('glacier', 'adventure', { activity: skiing });
+  const trail = place('trail', 'nature', { activity: snowshoeing });
+  const paired = (places: PlaceFact[], offers: ExperienceFact[]): Array<[string, string]> =>
+    [...pairOffers(places, offers, words)].map(([placeId, found]) => [placeId, found.title]);
+
+  it('gives each activity place the best-reviewed offer that names its activity', () => {
+    const offers = [
+      offer('Old Town Walking Tour', { reviewCount: 9_000 }),
+      offer('Guided Ski Day', { reviewCount: 40 }),
+      offer('Snowboard Lesson for Beginners', { reviewCount: 400 }),
+      offer('Snowshoeing in the Valley', { reviewCount: 25 }),
+    ];
+
+    expect(paired([glacier, trail], offers)).toEqual([
+      ['place:glacier', 'Snowboard Lesson for Beginners'],
+      ['place:trail', 'Snowshoeing in the Valley'],
+    ]);
+  });
+
+  it('accepts an offer with only a handful of reviews: few people review a snowshoe hike', () => {
+    expect(paired([trail], [offer('Snowshoeing in the Valley', { rating: 5, reviewCount: 2 })])).toEqual([['place:trail', 'Snowshoeing in the Valley']]);
+  });
+
+  it('takes an offer nobody has rated yet only when no rated one is on sale', () => {
+    const unrated = offer('Snowshoeing by Moonlight', { rating: undefined, reviewCount: undefined });
+    const rated = offer('Snowshoeing in the Valley', { rating: 4.6, reviewCount: 3 });
+
+    expect(paired([trail], [unrated, rated])).toEqual([['place:trail', 'Snowshoeing in the Valley']]);
+    expect(paired([trail], [unrated])).toEqual([['place:trail', 'Snowshoeing by Moonlight']]);
+  });
+
+  it('never shows a poorly rated offer', () => {
+    expect(paired([trail], [offer('Snowshoeing in the Valley', { rating: 4.2, reviewCount: 900 })])).toEqual([]);
+  });
+
+  it('matches whole words, so a ski jump ticket is not skiing', () => {
+    expect(paired([glacier], [offer('Ski Jump Arena Entrance Ticket')])).toEqual([]);
+  });
+
+  it('shows one offer once when two places are for the same activity', () => {
+    const second = place('second-glacier', 'adventure', { activity: skiing });
+    const offers = [offer('Guided Ski Day', { reviewCount: 40 }), offer('Snowboard Lesson for Beginners', { reviewCount: 400 })];
+
+    expect(paired([glacier, second], offers)).toEqual([
+      ['place:glacier', 'Snowboard Lesson for Beginners'],
+      ['place:second-glacier', 'Guided Ski Day'],
+    ]);
+  });
+
+  it('gives an offer to the activity its title names most exactly', () => {
+    const crossCountry = place('loipe', 'nature', { activity: { id: 'cross-country', label: 'Cross-country skiing', doing: 'cross-country skiing' } });
+    const all = new Map<string, readonly string[]>([...words, ['cross-country', ['cross-country', 'nordic']]]);
+    const offers = [offer('Cross-country skiing day', { reviewCount: 900 }), offer('Guided Ski Day', { reviewCount: 40 })];
+    const pairs = (places: PlaceFact[]): Array<[string, string]> => [...pairOffers(places, offers, all)].map(([placeId, found]) => [placeId, found.title]);
+
+    expect(pairs([glacier, crossCountry])).toEqual([
+      ['place:glacier', 'Guided Ski Day'],
+      ['place:loipe', 'Cross-country skiing day'],
+    ]);
+    // Also when no place for cross-country skiing is in the video: it is still not a downhill offer.
+    expect(pairs([glacier])).toEqual([['place:glacier', 'Guided Ski Day']]);
+  });
+
+  it('leaves a sight without an offer', () => {
+    expect(paired([place('cathedral', 'history')], [offer('Guided Ski Day')])).toEqual([]);
+  });
+});
+
+describe('selectExperiences beside offers that already go with an activity', () => {
+  function offer(title: string, sourceId: string, reviewCount: number): ExperienceFact {
+    return { id: `exp:${sourceId}:${title}`, kind: 'experience', title, amount: 50, currency: 'EUR', rating: 4.8, reviewCount, url: `https://example.com/${sourceId}`, sourceId };
+  }
+
+  it('does not list the offer again, nor the same trip from the other marketplace', () => {
+    const shown = offer('Innsbruck: Tandem Paragliding Flight', 'getyourguide', 300);
+    const offers = [shown, offer('Innsbruck Tandem Paragliding Flight', 'viator', 200), offer('Old Town Walking Tour', 'viator', 100)];
+
+    expect(selectExperiences(offers, [], [], [shown]).map((entry) => entry.title)).toEqual(['Old Town Walking Tour']);
   });
 });
 

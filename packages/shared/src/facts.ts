@@ -28,11 +28,22 @@ export const SourceSchema = z.object({
 });
 export type Source = z.infer<typeof SourceSchema>;
 
+/** What a place is for, when it was found as somewhere to do something. */
+export interface PlaceActivity {
+  id: string;
+  /** Shown over the scene: "Ski & snowboard". */
+  label: string;
+  /** How the voiceover names it: "skiing and snowboarding". */
+  doing: string;
+}
+
 export interface PlaceFact {
   id: string;
   kind: 'place';
   interest: InterestId;
   name: string;
+  /** Set when the place was searched for as somewhere to do an activity. */
+  activity?: PlaceActivity;
   /** What kind of place it is, as the source names it: "Food court". */
   category?: string;
   /** The source's own one-line description of the place. */

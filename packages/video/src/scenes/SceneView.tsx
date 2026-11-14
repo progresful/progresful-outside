@@ -25,6 +25,29 @@ const textBlock: CSSProperties = {
   gap: 10,
 };
 
+/** The activity label: a small pill in the product's green, so "what you can do here" reads first. */
+const kickerPill: CSSProperties = {
+  alignSelf: 'flex-start',
+  padding: '6px 16px',
+  borderRadius: 999,
+  background: '#0E6B4A',
+  fontSize: 22,
+  fontWeight: 600,
+  letterSpacing: '0.02em',
+};
+
+/** The place's own description: quieter than the facts above it, and never more than two lines. */
+const noteText: CSSProperties = {
+  maxWidth: 980,
+  fontSize: 23,
+  lineHeight: 1.3,
+  color: MUTED_ON_PHOTO,
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+};
+
 const captionBar: CSSProperties = {
   position: 'absolute',
   left: 0,
@@ -69,10 +92,12 @@ export function SceneView({ scene, manifest, mediaBase }: SceneViewProps) {
       ) : null}
       <AbsoluteFill style={scrim} />
       <div style={{ ...textBlock, opacity }}>
+        {text.kicker ? <div style={kickerPill}>{text.kicker}</div> : null}
         <div style={{ fontFamily: TITLE_FONT, fontWeight: 700, fontSize: 60, lineHeight: 1.05, letterSpacing: '-0.02em' }}>
           {text.title}
         </div>
         {text.subtitle ? <div style={{ fontSize: 26, color: MUTED_ON_PHOTO }}>{text.subtitle}</div> : null}
+        {text.note ? <div style={noteText}>{text.note}</div> : null}
         {text.items.map((item) => (
           <div key={item.title} style={{ display: 'flex', gap: 14, fontSize: 26 }}>
             <span style={{ fontWeight: 600 }}>{item.title}</span>

@@ -1,8 +1,10 @@
 import {
   VideoManifestSchema,
+  type ExperienceFact,
   type Fact,
   type InterestId,
   type ListingContext,
+  type PlaceFact,
   type Scene,
   type Source,
   type VideoManifest,
@@ -10,6 +12,7 @@ import {
 import { venueName } from '../sources/events';
 import { formatPrice } from '../sources/price';
 import { precipitationWord } from '../sources/weather';
+import { speaksOfAny } from './activitySigns';
 import { factMap, planScenes, type Selection, type StoryScene } from './script';
 import { travelLabel } from './select';
 import { totalFrames, type SceneTiming } from './timing';
@@ -27,7 +30,68 @@ export interface AssembleInput {
   sources: Source[];
 }
 
-type SceneContent = Pick<Scene, 'title' | 'subtitle' | 'items' | 'imageUrl' | 'place'>;
+type SceneContent = Pick<Scene, 'kicker' | 'title' | 'subtitle' | 'note' | 'items' | 'imageUrl' | 'place'>;
+
+/** A description is shown on two lines at most; an offer's title on one. */
+const NOTE_MAX_CHARS = 120;
+const OFFER_TITLE_MAX_CHARS = 60;
+
+/**
+ * The text itself when it fits, else as many whole words as do, ending in an ellipsis. A text
+ * with no gap between words in its second half is cut by length instead.
+ */
+function shorten(text: string, maxChars: number): string {
+  const clean = text.trim();
+  if (clean.length <= maxChars) {
+    return clean;
+  }
+  const cut = clean.slice(0, maxChars);
+  const lastGap = cut.search(/\s\S*$/u);
+  const kept = lastGap >= maxChars / 2 ? cut.slice(0, lastGap) : cut.slice(0, maxChars - 1);
+  return `${kept.replace(/[^\p{L}\p{N})]+$/u, '')}…`;
+}
+
+/**
+ * Marketplaces put the town in front: "Innsbruck: Tandem Paragliding Flight". The scene already
+ * says where, so the town goes; a front part that names an activity ("Rafting: …") stays.
+ */
+function offerTitle(title: string): string {
+  const front = /^([^:]{2,40}):\s+(?=\S.{11,})/u.exec(title);
+  const withoutPlace = front && !speaksOfAny(front[1] ?? '') ? title.slice(front[0].length) : title;
+  return shorten(withoutPlace, OFFER_TITLE_MAX_CHARS);
+}
+
+const REVIEW_COUNT = new Intl.NumberFormat('en-US');
+
+/** Kinds that say what sort of business a listing is, not what the visitor finds there. */
+const BUSINESS_KIND = /\b(?:store|shop|company|office|association|organi[sz]ation|club|bus stop)\b/i;
+
+/**
+ * "4.5 rating · ≈ 13 min walk" for a sight. Somewhere to go and do something also says what kind
+ * of place it is and how many people rated it: "Ski resort · 4.7 rating · 11,817 reviews · ≈ 50 min drive".
+ */
+function placeSubtitle(place: PlaceFact): string {
+  const rating = `${place.rating.toFixed(1)} rating`;
+  const kind = place.category && !BUSINESS_KIND.test(place.category) ? place.category : undefined;
+  const parts = place.activity
+    ? [kind, rating, `${REVIEW_COUNT.format(place.reviewCount)} reviews`, travelLabel(place.distanceM)]
+    : [rating, travelLabel(place.distanceM)];
+  return parts.filter((part) => part !== undefined && part !== '').join(' · ');
+}
+
+/** What an activity scene shows: the place, what it is like, and the offer to book for it. */
+function activityContent(place: PlaceFact, offer: ExperienceFact | undefined, imageUrl: string | undefined): SceneContent {
+  const note = place.activity ? shorten(place.description ?? '', NOTE_MAX_CHARS) : '';
+  return {
+    ...(place.activity ? { kicker: place.activity.label } : {}),
+    title: place.name,
+    subtitle: placeSubtitle(place),
+    ...(note ? { note } : {}),
+    ...(offer ? { items: [{ title: offerTitle(offer.title), detail: `from ${formatPrice(offer.amount, offer.currency)}` }] } : {}),
+    imageUrl,
+    place: place.hours && place.timezone ? { hours: place.hours, timezone: place.timezone } : undefined,
+  };
+}
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -118,12 +182,7 @@ function sceneContent(scene: StoryScene, input: AssembleInput, facts: ReadonlyMa
       if (first?.kind !== 'place') {
         return { title: sel.place.city, imageUrl: listingPhoto };
       }
-      return {
-        title: first.name,
-        subtitle: `${first.rating.toFixed(1)} rating · ${travelLabel(first.distanceM)}`,
-        imageUrl: mirrored(first.imageUrl) ?? listingPhoto,
-        place: first.hours && first.timezone ? { hours: first.hours, timezone: first.timezone } : undefined,
-      };
+      return activityContent(first, sel.activityOffers?.get(first.id), mirrored(first.imageUrl) ?? listingPhoto);
     }
     case 'experiences':
       return {
@@ -171,12 +230,14 @@ export function assembleManifest(input: AssembleInput): VideoManifest {
   const facts = factMap(input.sel);
   const scenes = input.scenes.map((scene, index): Scene => {
     const timing = input.timings[index] as SceneTiming;
+    // The offer shown beside an activity is one of the scene's facts, though the voice never reads it.
+    const offers = scene.type === 'activity' ? scene.factIds.flatMap((id) => input.sel.activityOffers?.get(id) ?? []) : [];
     return {
       type: scene.type,
       startFrame: timing.startFrame,
       durationInFrames: timing.durationInFrames,
       captions: timing.captions,
-      factIds: scene.factIds,
+      factIds: [...scene.factIds, ...offers.map((offer) => offer.id)],
       ...sceneContent(scene, input, facts),
     };
   });

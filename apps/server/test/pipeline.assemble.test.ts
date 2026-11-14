@@ -1,4 +1,4 @@
-import { VideoManifestSchema, type ListingContext, type OpeningHours, type Source } from '@outside/shared';
+import { VideoManifestSchema, type ExperienceFact, type ListingContext, type OpeningHours, type Source } from '@outside/shared';
 import { describe, expect, it } from 'vitest';
 import { assembleManifest, formatDateRange, sceneImageUrls, type AssembleInput } from '../src/pipeline/assemble';
 import { factMap, planScenes, templateLines, type Selection, type StoryScene } from '../src/pipeline/script';
@@ -150,6 +150,16 @@ describe('assembleManifest', () => {
     expect(made.scenes.find((scene) => scene.type === 'stay')?.imageUrl).toBe('/media/second.jpg');
   });
 
+  it('labels an activity scene with what there is to do', () => {
+    const skiing = { id: 'ski', label: 'Ski & snowboard', doing: 'skiing and snowboarding' };
+    const made = assembleManifest(input(selection({ places: [{ ...market, activity: skiing }, museum, park] })));
+    const activities = made.scenes.filter((scene) => scene.type === 'activity');
+
+    expect(activities[0]).toMatchObject({ title: 'Mercado da Ribeira', kicker: 'Ski & snowboard' });
+    expect(activities[1]).not.toHaveProperty('kicker');
+    expect(VideoManifestSchema.safeParse(made).success).toBe(true);
+  });
+
   it('names the venue of the event when it is known', () => {
     const concert = { ...christmasMarket, title: 'Bryan Adams', dateText: '20 November', venue: 'MEO Arena, Lisbon, Portugal' };
     const stay = assembleManifest(input(selection({ events: [concert] }))).scenes.find((scene) => scene.type === 'stay');
@@ -271,5 +281,105 @@ describe('formatDateRange', () => {
     ['2026-12-12', '2026-12-12', '12 Dec'],
   ])('formats %s to %s', (start, end, expected) => {
     expect(formatDateRange(start, end)).toBe(expected);
+  });
+});
+
+describe('an activity scene, for someone who wants to go and do it', () => {
+  const skiing = { id: 'ski', label: 'Ski & snowboard', doing: 'skiing and snowboarding' };
+  const glacier = placeFact('glacier', {
+    name: 'Stubai Glacier',
+    interest: 'adventure',
+    activity: skiing,
+    category: 'Ski resort',
+    description: 'Popular ski mountain with various trails, a terrain park & dramatic views, plus on-mountain dining.',
+    rating: 4.7,
+    reviewCount: 11_817,
+    distanceM: 34_000,
+    sourceId: 'google-maps:adventure',
+  });
+  const skiDay: ExperienceFact = {
+    id: 'exp:ski-day',
+    kind: 'experience',
+    title: 'Innsbruck: A guided Ski-Day in the capital of the Alps',
+    amount: 340,
+    currency: 'EUR',
+    url: 'https://www.getyourguide.com/innsbruck/ski-day',
+    sourceId: 'getyourguide',
+  };
+  const activities = (sel: Selection) => assembleManifest(input(sel)).scenes.filter((scene) => scene.type === 'activity');
+  const [ski, sight] = activities(selection({ places: [glacier, museum, park], activityOffers: new Map([[glacier.id, skiDay]]) }));
+
+  it('says what kind of place it is, how many people rated it and how far it is', () => {
+    expect(ski?.subtitle).toBe('Ski resort · 4.7 rating · 11,817 reviews · ≈ 45 min drive');
+  });
+
+  it('leaves out a kind that only says what sort of business it is', () => {
+    const subtitleOf = (category: string) => activities(selection({ places: [{ ...glacier, category }, museum, park] }))[0]?.subtitle;
+
+    expect(subtitleOf('Store')).toBe('4.7 rating · 11,817 reviews · ≈ 45 min drive');
+    expect(subtitleOf('Event management company')).toBe('4.7 rating · 11,817 reviews · ≈ 45 min drive');
+    expect(subtitleOf('Athletic club')).toBe('4.7 rating · 11,817 reviews · ≈ 45 min drive');
+    expect(subtitleOf('Swimming lake')).toBe('Swimming lake · 4.7 rating · 11,817 reviews · ≈ 45 min drive');
+    expect(subtitleOf('Boat tour agency')).toBe('Boat tour agency · 4.7 rating · 11,817 reviews · ≈ 45 min drive');
+  });
+
+  it("adds the place's own description", () => {
+    expect(ski?.note).toBe('Popular ski mountain with various trails, a terrain park & dramatic views, plus on-mountain dining.');
+  });
+
+  it('cuts a description that would run past two lines at a word', () => {
+    const wordy = { ...glacier, description: `${'Gentle trekking route with views of the Tyrolean mountains, '.repeat(3)}known for its pines.` };
+    const note = activities(selection({ places: [wordy, museum, park] }))[0]?.note ?? '';
+
+    expect(note.length).toBeLessThanOrEqual(120);
+    expect(note).toMatch(/^Gentle trekking route with views .*\p{L}…$/u);
+  });
+
+  it('shows the offer to book for it with its live price, without the marketplace prefix', () => {
+    expect(ski?.items).toEqual([{ title: 'A guided Ski-Day in the capital of the Alps', detail: 'from €340' }]);
+    expect(ski?.factIds).toEqual(['place:glacier', 'exp:ski-day']);
+  });
+
+  it('cuts a long offer title at a word', () => {
+    const long = { ...skiDay, title: 'Neustift im Stubaital: Innsbruck-Stubai Valley: Snowshoeing in the idyllic Stubai Valley with a guide' };
+    const [scene] = activities(selection({ places: [glacier, museum, park], activityOffers: new Map([[glacier.id, long]]) }));
+
+    expect(scene?.items?.[0]?.title).toBe('Innsbruck-Stubai Valley: Snowshoeing in the idyllic Stubai…');
+  });
+
+  it('cuts a description with no spaces in it by length, and leaves out one that is only blank', () => {
+    const noteOf = (description: string) => activities(selection({ places: [{ ...glacier, description }, museum, park] }))[0];
+
+    expect(noteOf('x'.repeat(200))?.note).toBe(`${'x'.repeat(119)}…`);
+    expect(noteOf('   ')).not.toHaveProperty('note');
+  });
+
+  it('keeps the front of an offer title when that is what names the activity', () => {
+    const titleOf = (title: string) =>
+      activities(selection({ places: [glacier, museum, park], activityOffers: new Map([[glacier.id, { ...skiDay, title }]]) }))[0]?.items?.[0]?.title;
+
+    expect(titleOf('Rafting: Inn river for beginners')).toBe('Rafting: Inn river for beginners');
+    expect(titleOf('Skiing: a guided day on the glacier')).toBe('Skiing: a guided day on the glacier');
+    expect(titleOf('Neustift im Stubaital: Tandem Paragliding Flight')).toBe('Tandem Paragliding Flight');
+  });
+
+  it('shows no offer where none goes with the place', () => {
+    const [alone] = activities(selection({ places: [glacier, museum, park] }));
+
+    expect(alone).not.toHaveProperty('items');
+    expect(alone?.factIds).toEqual(['place:glacier']);
+  });
+
+  it('keeps a sight to its rating and distance', () => {
+    expect(sight?.subtitle).toBe('4.7 rating · ≈ 25 min walk');
+    expect(sight).not.toHaveProperty('note');
+    expect(sight).not.toHaveProperty('items');
+  });
+
+  it('still satisfies the shared schema', () => {
+    const made = assembleManifest(input(selection({ places: [glacier, museum, park], activityOffers: new Map([[glacier.id, skiDay]]) })));
+
+    expect(VideoManifestSchema.safeParse(made).success).toBe(true);
+    expect(VideoManifestSchema.parse(made).scenes[1]?.note).toContain('terrain park');
   });
 });

@@ -13,8 +13,10 @@ import { CreditsExhaustedError } from '../contextdev/client';
 import type { TripWindow } from '../sources/tripWindow';
 import { emptyResult, type SourceResult } from '../sources/types';
 import type { NormalizedPlace } from './normalize';
+import { shortName } from '../sources/places';
+import { fitsActivity, placeSearches, type PlaceSearch } from './activities';
 import { placeQuery, seasonOf, seasonPhotoQuery, type Season } from './season';
-import { WIDE_RADIUS_M } from './select';
+import { MIN_PLACES, WIDE_RADIUS_M, selectPlaces } from './select';
 import type { PipelineDeps, StageUpdate } from './types';
 
 /** How long the pipeline waits for any one source before carrying on without it. */
@@ -30,6 +32,8 @@ export interface Gathered {
   seasonPhotos: SeasonPhoto[];
   /** The season the places and offers were searched for. */
   season: Season;
+  /** The place searches that were planned: activities first, then one per place-kind interest. */
+  searches: PlaceSearch[];
   sources: Source[];
 }
 
@@ -69,53 +73,104 @@ export async function guarded<T>(
   }
 }
 
-function findingStage(interest: InterestId, index: number, count: number): StageUpdate {
-  return {
-    status: 'gathering',
-    stage: `Finding ${interestById(interest).stageNoun} spots`,
-    progress: 0.2 + (0.3 * index) / count,
-  };
+function findingStage(search: PlaceSearch, index: number, count: number): StageUpdate {
+  const what = search.activity ? search.activity.label.toLowerCase() : `${interestById(search.interest).stageNoun} spots`;
+  return { status: 'gathering', stage: `Finding ${what}`, progress: 0.2 + (0.3 * index) / count };
+}
+
+function withinReach(facts: readonly PlaceFact[], radiusM: number): boolean {
+  return facts.some((fact) => fact.distanceM <= radiusM);
+}
+
+/** A "summer toboggan run" is no use in January, nor a "winter hiking trail" in July. Winterthur is a town. */
+const OTHER_HALF_OF_YEAR: Readonly<Partial<Record<Season['kind'], RegExp>>> = {
+  snowy: /\b(?:summer|sommer)/i,
+  cold: /\b(?:summer|sommer)/i,
+  warm: /\bwinter(?!thur)/i,
+  hot: /\bwinter(?!thur)/i,
+};
+
+function inSeason(result: SourceResult<PlaceFact>, season: Season): SourceResult<PlaceFact> {
+  const wrong = OTHER_HALF_OF_YEAR[season.kind];
+  return wrong ? { ...result, facts: result.facts.filter((fact) => !wrong.test(`${fact.name} ${fact.category ?? ''}`)) } : result;
+}
+
+function named(result: SourceResult<PlaceFact>): SourceResult<PlaceFact> {
+  return { ...result, facts: result.facts.map((fact) => ({ ...fact, name: shortName(fact.name) })) };
 }
 
 /**
- * Places for one interest: searched the way the season calls for, and the usual way when that
- * finds nothing within reach of the listing.
+ * The places one planned search finds. An activity's are checked against the season and the
+ * activity itself. A place-kind interest searched the seasonal way falls back to its usual search
+ * when that finds nothing within reach of the listing.
  */
-async function placesFor(deps: PipelineDeps, ctx: GatherContext, season: Season, interest: InterestId): Promise<SourceResult<PlaceFact>> {
+async function placesFor(deps: PipelineDeps, ctx: GatherContext, search: PlaceSearch, season: Season): Promise<SourceResult<PlaceFact>> {
   const { place } = ctx;
-  const search = (query: string): Promise<SourceResult<PlaceFact>> =>
+  const { interest, activity } = search;
+  const run = (query: string): Promise<SourceResult<PlaceFact>> =>
     guarded(deps, `places:${interest}`, emptyResult<PlaceFact>(), () =>
-      deps.sources.places(deps, { interest, query, locationText: place.locationText, origin: place }),
+      deps.sources.places(deps, {
+        interest,
+        query,
+        locationText: place.locationText,
+        origin: place,
+        ...(activity ? { activity: { id: activity.id, label: activity.label, doing: activity.doing } } : {}),
+      }),
     );
-  const { query, fallback } = placeQuery(interest, season);
-  const found = await search(query);
-  const withinReach = found.facts.some((fact) => fact.distanceM <= WIDE_RADIUS_M);
-  return fallback && !withinReach ? search(fallback) : found;
+  const found = await run(search.query);
+  if (activity) {
+    // Judged by its full name, which may be all that says what the place is for; then shown by its short one.
+    const fitting = inSeason(found, season);
+    // The first answer is the first one left for this season: a summer slide listed first does not count.
+    return named({ ...fitting, facts: fitting.facts.filter((fact, index) => fitsActivity(fact, activity, index === 0)) });
+  }
+  return named(search.fallback && !withinReach(found.facts, WIDE_RADIUS_M) ? await run(search.fallback) : found);
 }
 
-/** Fetches places for every interest at once, announcing each interest as the one before it lands. */
-async function gatherPlaces(deps: PipelineDeps, ctx: GatherContext, season: Season, onStage: (update: StageUpdate) => void) {
-  const { interests } = ctx;
-  const waiting = new Set(interests);
+/** Runs the planned searches at once, announcing each as the one before it lands. */
+async function runSearches(
+  deps: PipelineDeps,
+  ctx: GatherContext,
+  season: Season,
+  searches: readonly PlaceSearch[],
+  onStage: (update: StageUpdate) => void,
+) {
+  const waiting = new Set(searches);
   const announceNext = (): void => {
-    const next = interests.find((interest) => waiting.has(interest));
-    onStage(
-      next
-        ? findingStage(next, interests.indexOf(next), interests.length)
-        : { status: 'gathering', stage: 'Checking live prices', progress: 0.6 },
-    );
+    const next = searches.find((search) => waiting.has(search));
+    onStage(next ? findingStage(next, searches.indexOf(next), searches.length) : { status: 'gathering', stage: 'Checking live prices', progress: 0.6 });
   };
   announceNext();
   return Promise.all(
-    interests.map(async (interest) => {
+    searches.map(async (search) => {
       try {
-        return await placesFor(deps, ctx, season, interest);
+        return await placesFor(deps, ctx, search, season);
       } finally {
-        waiting.delete(interest);
+        waiting.delete(search);
         announceNext();
       }
     }),
   );
+}
+
+/**
+ * Places for the video. If the planned searches (activities first) leave too few places within
+ * reach to carry a video, each interest's own broad search is run as well.
+ */
+async function gatherPlaces(deps: PipelineDeps, ctx: GatherContext, season: Season, searches: readonly PlaceSearch[], onStage: (update: StageUpdate) => void) {
+  const planned = await runSearches(deps, ctx, season, searches, onStage);
+  // Judged the way the video will choose: a place nearby that is too thinly reviewed to show does not count.
+  const showable = selectPlaces(planned.flatMap((result) => result.facts), ctx.interests, searches);
+  if (showable.length >= MIN_PLACES) {
+    return planned;
+  }
+  const asked = new Set(searches.map((search) => search.query));
+  const broad = ctx.interests.flatMap((interest): PlaceSearch[] => {
+    const { query, fallback } = placeQuery(interest, season);
+    const [first, second] = [query, fallback].filter((candidate): candidate is string => candidate !== undefined && !asked.has(candidate));
+    return first ? [{ interest, query: first, ...(second ? { fallback: second } : {}) }] : [];
+  });
+  return [...planned, ...(await Promise.all(broad.map((search) => placesFor(deps, ctx, search, season))))];
 }
 
 /**
@@ -134,8 +189,9 @@ export async function gather(
     deps.sources.climate(deps, { lat: place.lat, lng: place.lng, window, today: deps.today() }),
   );
   const season = seasonOf(climate.facts[0], window, place.lat);
+  const searches = placeSearches(ctx.interests, season);
   const [places, experiences, events, weather, seasonPhoto] = await Promise.all([
-    gatherPlaces(deps, ctx, season, onStage),
+    gatherPlaces(deps, ctx, season, searches, onStage),
     guarded(deps, 'experiences', [], () =>
       deps.sources.experiences(deps, {
         ...area,
@@ -160,6 +216,7 @@ export async function gather(
     climate: climate.facts,
     seasonPhotos: seasonPhoto.facts,
     season,
+    searches,
     sources: used.flatMap((result) => (result.source && result.facts.length > 0 ? [result.source] : [])),
   };
 }

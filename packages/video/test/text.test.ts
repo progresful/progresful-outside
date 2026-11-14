@@ -93,6 +93,20 @@ describe('sceneText', () => {
     expect(sceneText(activity, manifest, now, 'UTC').subtitle).toBe('4.5 rating · ≈ 13 min walk');
   });
 
+  it("carries the place's description and the offer beside it", () => {
+    const detailed: Scene = {
+      ...activity,
+      note: 'Popular ski mountain with a terrain park.',
+      items: [{ title: 'A guided Ski-Day', detail: 'from €340' }],
+    };
+
+    expect(sceneText(detailed, manifest, now)).toMatchObject({
+      note: 'Popular ski mountain with a terrain park.',
+      items: [{ title: 'A guided Ski-Day', detail: 'from €340' }],
+    });
+    expect(sceneText(activity, manifest, now)).not.toHaveProperty('note');
+  });
+
   it('puts the as-of line on the outro', () => {
     const outro: Scene = { ...activity, type: 'outro', title: "What's outside", subtitle: undefined, items: [{ title: 'Google Maps', detail: '' }] };
     expect(sceneText(outro, manifest, now, 'UTC')).toEqual({
@@ -105,5 +119,16 @@ describe('sceneText', () => {
   it('passes other scenes through unchanged', () => {
     const hook: Scene = { ...activity, type: 'hook', title: 'Around Lisbon', subtitle: '12–16 Dec' };
     expect(sceneText(hook, manifest, now, 'UTC')).toEqual({ title: 'Around Lisbon', subtitle: '12–16 Dec', items: [] });
+  });
+
+  it('carries the activity label of a scene, and none where there is none', () => {
+    const labelled: Scene = { ...activity, kicker: 'Ski & snowboard' };
+
+    expect(sceneText(labelled, manifest, now).kicker).toBe('Ski & snowboard');
+    expect(sceneText(activity, manifest, now)).not.toHaveProperty('kicker');
+    expect(sceneText({ ...labelled, place: { hours: always, timezone: 'Europe/Vienna' } }, manifest, now)).toMatchObject({
+      kicker: 'Ski & snowboard',
+      subtitle: expect.stringContaining('Open now'),
+    });
   });
 });

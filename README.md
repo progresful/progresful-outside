@@ -92,7 +92,7 @@ that far. From that it works out how the stay will feel (snowy, cold, mild, warm
 - searches Maps for what suits it: "winter activities", "ski resort", "thermal bath" and "cosy restaurant" in
   snow; "restaurant with terrace" and "rooftop bar" in heat; "Christmas market" in the weeks before Christmas.
   If a seasonal search finds nothing within 25 km, the usual search runs instead;
-- prefers a bookable offer that suits it (ski, snowshoe, sleigh… or boat, kayak…);
+- prefers a bookable offer that suits it (snowshoe, sleigh, husky… or boat, kayak…);
 - opens on a photo of the place in that season, when Wikimedia Commons has one whose title names the place;
 - swaps each outdoor place's stock photo for one taken in that season, found by image search
   ("Innsbrucker Hofgarten Innsbruck winter snow"). The search runs while the script is written and voiced.
@@ -109,10 +109,46 @@ When the usual weather cannot be fetched (it is tried twice), a winter stay beyo
 treated as cold; otherwise nothing is assumed and the video is built the plain way. In a mild season no image
 search is made, and restaurants, bars, museums and spas always keep their stock photo.
 
+### Things to do, not only places to see
+
+Four interests are about doing something: Adventure & sports, Nature & hikes, Beaches & water, Family & kids.
+For those the server does not search Maps for "outdoor activities"; it searches for where each activity of
+the season is done, and labels the scene with it:
+
+| Season of the stay | Adventure & sports | Nature & hikes | Beaches & water | Family & kids |
+|---|---|---|---|---|
+| Snowy or cold | Ski & snowboard, sledding, ice skating | Snowshoe & winter walks, cross-country skiing | Thermal baths, indoor pools | Sledding, ice skating |
+| Warm or hot | Quad & buggy, swimming, rafting & canyoning, mountain biking, climbing, paragliding | Hiking, viewpoints | Swimming, kayak & SUP, boat trips | Swimming, adventure parks |
+| Mild | Mountain biking, climbing, quad & buggy | Hiking, viewpoints | Kayak & SUP, boat trips | Adventure parks |
+
+A video makes at most four place searches, shared between the picked interests in turn, most wanted activity
+first. One interest alone gets four activities searched and the best three shown.
+
+Each activity scene shows, all from live data:
+
+- the activity ("Ski & snowboard") and the place Maps lists first or second for it ("Stubai Glacier");
+- what kind of place it is, its rating and number of reviews, and the drive: "Ski resort · 4.7 rating ·
+  11,817 reviews · ≈ 45 min drive". People drive to a ski area, so an activity may be up to 40 km away;
+- Maps' own one-line description of the place;
+- the best offer on Viator or GetYourGuide whose title names the activity, with its price: "A guided
+  Ski-Day in Innsbruck … from €340". That offer is then not repeated in the experiences scene.
+
+What keeps it honest: only Maps' first two results for an activity are trusted; a place for the other half
+of the year ("Sommerrodelbahn" in January) is dropped; a place whose name is that of another activity is
+dropped (a search for rafting in Albufeira returns kayak tours); and a rafting base, quad outfit, kayak
+rental, climbing or bike park, paragliding school, boat tour, adventure park or ice rink must say what it is
+in its name, kind or description. A place that says nothing either way ("Rumer Alm", a mountain hut with a
+toboggan run) is taken on Maps' word only when it is the first result. Where an activity is not found
+nearby, there is no scene for it. An offer goes with the activity its title names most exactly, so a
+"cross-country skiing day" is not shown beside a downhill ski area. The offer is for the activity in the
+area, not necessarily at that very place; its title says where. The drive is an estimate from the
+straight-line distance (30 km/h in town, 60 beyond, 80 on a long run), rounded to five minutes above twenty.
+
 ## Limits worth knowing
 
-- **Context.dev allows a free organisation 10 requests a minute.** A new video in a new city uses 6 (8 with five
-  interests), one more for each seasonal search that had to fall back, and one more for each outdoor place
+- **Context.dev allows a free organisation 10 requests a minute.** A new video in a new city uses up to 7 (four
+  place searches, two marketplaces, events), a few more when the planned searches found too little and each
+  interest's broad search runs as well, and one more for each outdoor place
   whose photo is searched. Past ten, the photo searches are the ones that wait, and after 9 seconds the
   stock photos are used. The server queues beyond that rather than fail, so a second new city inside the same minute
   gets a thinner video or "Not enough live data"; a retry a minute later works. On a bigger plan, set

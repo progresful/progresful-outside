@@ -4,18 +4,19 @@ import type { FoundPhoto } from '../sources/placePhoto';
 import { emptyResult } from '../sources/types';
 import { resolveTripWindow } from '../sources/tripWindow';
 import { assembleManifest, sceneImageUrls } from './assemble';
+import { OFFER_WORDS, activityOfferWords, type PlaceSearch } from './activities';
 import { gather, guarded } from './gather';
 import { normalizePlace } from './normalize';
 import { planScenes, scriptWithGuard, type Selection } from './script';
 import { placePhotoQuery, seasonalWords, wantsSeasonalPhoto, type Season } from './season';
-import { MIN_PLACES, selectEvents, selectExperiences, selectPlaces } from './select';
+import { MIN_PLACES, pairOffers, selectEvents, selectExperiences, selectPlaces } from './select';
 import type { PipelineDeps, StageUpdate } from './types';
 import { voiceToFit } from './voiceFit';
 
 export type { PipelineDeps, PipelineSources, StageUpdate } from './types';
 
 /** Part of the video cache key: bump it when the video's look or structure changes. */
-export const TEMPLATE_VERSION = 3;
+export const TEMPLATE_VERSION = 5;
 
 /** How long the video waits for a seasonal photo of a place before keeping the stock one. */
 export const PHOTO_DEADLINE_MS = 9_000;
@@ -54,7 +55,13 @@ type SeasonalPhotos = ReadonlyMap<string, FoundPhoto>;
  * Looks for a photo of each outdoor place as it is in the season of the stay. Runs while the
  * script is written and voiced; a search that fails or takes too long leaves the stock photo.
  */
-async function findSeasonalPhotos(deps: PipelineDeps, sel: Selection, season: Season): Promise<{ photos: SeasonalPhotos; sources: Source[] }> {
+async function findSeasonalPhotos(
+  deps: PipelineDeps,
+  sel: Selection,
+  season: Season,
+  searches: readonly PlaceSearch[],
+): Promise<{ photos: SeasonalPhotos; sources: Source[] }> {
+  const photoWordOf = new Map(searches.flatMap((search) => (search.activity ? [[search.activity.id, search.activity.photoWord] as const] : [])));
   const wanted = sel.places.filter((place) => wantsSeasonalPhoto(place.interest, season));
   const results = await Promise.all(
     wanted.map((place) =>
@@ -67,7 +74,7 @@ async function findSeasonalPhotos(deps: PipelineDeps, sel: Selection, season: Se
             placeId: place.id,
             placeName: place.name,
             city: sel.place.city,
-            query: placePhotoQuery(place.name, sel.place.city, season),
+            query: placePhotoQuery(place.name, sel.place.city, season, photoWordOf.get(place.activity?.id ?? '')),
           }),
         PHOTO_DEADLINE_MS,
       ),
@@ -104,6 +111,13 @@ function citedSources(sources: readonly Source[], sel: Selection, images: Readon
       .filter((fact) => planned.has(fact.id))
       .map((fact) => fact.sourceId),
   );
+  // An offer shown beside an activity is cited like any other, as long as its place is still in the video.
+  for (const place of sel.places) {
+    const offer = planned.has(place.id) ? sel.activityOffers?.get(place.id) : undefined;
+    if (offer) {
+      used.add(offer.sourceId);
+    }
+  }
   for (const photo of sel.seasonPhotos) {
     if (images.has(photo.imageUrl)) {
       used.add(photo.sourceId);
@@ -138,22 +152,31 @@ export async function runPipeline(
     onStage,
   );
 
-  const places = selectPlaces(gathered.places, interests);
+  const places = selectPlaces(gathered.places, interests, gathered.searches);
   if (places.length < MIN_PLACES) {
     throw new NotEnoughDataError();
   }
+  // Each place found for an activity gets the offer to book for it; the rest are listed on their own.
+  const activityOffers = pairOffers(places, gathered.experiences, OFFER_WORDS);
   const selection: Selection = {
     place,
     window,
     places,
-    experiences: selectExperiences(gathered.experiences, interests, seasonalWords(gathered.season)),
+    activityOffers,
+    // Offers for the activities the video is about come first, then whatever else suits the season.
+    experiences: selectExperiences(
+      gathered.experiences,
+      interests,
+      [...activityOfferWords(gathered.searches), ...seasonalWords(gathered.season)],
+      [...activityOffers.values()],
+    ),
     events: selectEvents(gathered.events, window),
     weather: gathered.weather,
     climate: gathered.climate,
     seasonPhotos: gathered.seasonPhotos,
   };
   // Started now, so the image search costs the viewer no extra wait beyond the script and voice.
-  const seasonalPhotos = findSeasonalPhotos(deps, selection, gathered.season);
+  const seasonalPhotos = findSeasonalPhotos(deps, selection, gathered.season, gathered.searches);
   seasonalPhotos.catch(() => undefined); // awaited below; this only keeps an early failure from going unhandled
 
   onStage({ status: 'writing', stage: 'Writing the script', progress: 0.7 });
