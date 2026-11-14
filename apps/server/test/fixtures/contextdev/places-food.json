@@ -1,0 +1,1588 @@
+{
+ "url": "https://www.google.com/maps/search/food%20market%20near%20Lisbon%2C%20Portugal",
+ "markdown": {
+  "requested": false,
+  "success": null,
+  "data": null
+ },
+ "parsed": {
+  "requested": true,
+  "success": true,
+  "data": {
+   "results": [
+    {
+     "place_id": "ChIJdWBeWYc0GQ0RktxySU7hjxM",
+     "name": "Time Out Market",
+     "rating": 4.4,
+     "number_of_reviews": 77120,
+     "website": "/url?q=https://www.timeout.pt/time-out-market-lisboa/pt&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goEXoECAMQHg&usg=AOvVaw3vHAzGO0Swu0Q1yd6_n5GP",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJdWBeWYc0GQ0RktxySU7hjxM",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible restroom\",\"enabled\":true},{\"name\":\"Wheelchair accessible seating\",\"enabled\":true}]}]",
+     "cid": "1409592934746217618",
+     "google_category": [
+      "Food court",
+      "Bar",
+      "Restaurant"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "10 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "10 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "10 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "10 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "10 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "10 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "10 AM–12 AM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLe1Z10tA5hRBXYNQu1_93SW2DqboJshcm_tN2kkJ805Jgc_ys73ga2lpUhIQpmhaW4qFfYVZCwAIriwF7bE0x7c17qsKdUNH-c_UsQcfSXLhNzDGPl2sdd-IpDWAlcB43fsaKFh=w433-h240-k-no",
+     "google_phone": "+351 21 060 7403",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJdWBeWYc0GQ0RktxySU7hjxM",
+     "claimed": true,
+     "latitude": 38.7070608,
+     "longitude": -9.1456691,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Mercado da Ribeira, Av. 24 de Julho",
+     "street_addr_supplement": "Mercado da Ribeira, Av. 24 de Julho",
+     "city": "Lisbon",
+     "postal_code": "1200-479",
+     "state": null,
+     "country": "PT",
+     "address": "Mercado da Ribeira, Av. 24 de Julho, Lisbon, null 1200-479, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJVZYBfIczGQ0RFFaStJaOGCY",
+     "name": "Baixa Market",
+     "rating": 4.3,
+     "number_of_reviews": 3345,
+     "website": "/url?q=https://www.adbaixapombalina.pt/&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goD3oECAMQRA&usg=AOvVaw123zGdWMq-Xeyp5RKtIpYN",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJVZYBfIczGQ0RFFaStJaOGCY",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true}]}]",
+     "cid": "2745100750808045076",
+     "google_category": [
+      "Market",
+      "Tourist attraction"
+     ],
+     "google_description": "Open-air market with merchants offering traditional street fare & beverages, plus local goods.",
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "10 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "10 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "10 AM–9 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "10 AM–9 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "10 AM–9 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "10 AM–9 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "10 AM–9 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLclgld80Tsxn6DQ-dbxsYny-UcWNfXCASIuOUgnki4uEwmiFVwVNgJm1TD-anJFWlvJTOsj2x1NpfH6jt8SA8qKUe5Uaa5X-3U-cAv2PbORYMt4o7lA159NCvW2pNzbWJlV9JBB=w408-h306-k-no",
+     "google_phone": "+351 21 342 1686",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJVZYBfIczGQ0RFFaStJaOGCY",
+     "claimed": true,
+     "latitude": 38.7135787,
+     "longitude": -9.1376907,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Praça da Figueira",
+     "street_addr_supplement": "Praça da Figueira",
+     "city": "Lisbon",
+     "postal_code": "1100-240",
+     "state": null,
+     "country": "PT",
+     "address": "Praça da Figueira, Lisbon, null 1100-240, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJFfe5foEzGQ0RRsM8qXffSEo",
+     "name": "Mercado de Campo de Ourique",
+     "rating": 4.4,
+     "number_of_reviews": 2685,
+     "website": "/url?q=https://informacoeseservicos.lisboa.pt/contactos/diretorio-da-cidade/mercado-campo-de-ourique&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goC3oECAMQZg&usg=AOvVaw0skaUjWLHrz8XJ1mGPD0qH",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJFfe5foEzGQ0RRsM8qXffSEo",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible restroom\",\"enabled\":true}]}]",
+     "cid": "5352773862163268422",
+     "google_category": [
+      "Market"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "7 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "10 AM–11 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "8 AM–11 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "7 AM–11 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "7 AM–11 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "7 AM–11 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "7 AM–12 AM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLcA_Gjq9jzDN7ZkApPT7i1L6yHTR4ctwF_y4PLoSkkETxgUhBRIuRRa3ixBpKdCc0DKtdQFFK6Kz1VRse34y698MK9hhlTVBzfmwi3PaBTjB1d3IldK9RUIV7rnoT-IA5UsGns=w408-h306-k-no",
+     "google_phone": null,
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJFfe5foEzGQ0RRsM8qXffSEo",
+     "claimed": true,
+     "latitude": 38.7163117,
+     "longitude": -9.1667393,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "R. Coelho da Rocha 47",
+     "street_addr_supplement": "R. Coelho da Rocha 47",
+     "city": "Lisbon",
+     "postal_code": "1350-075",
+     "state": null,
+     "country": "PT",
+     "address": "R. Coelho da Rocha 47, Lisbon, null 1350-075, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJ5UubZb0zGQ0RBUfpKBEQe4Y",
+     "name": "Mercado de Arroios",
+     "rating": 4.2,
+     "number_of_reviews": 4017,
+     "website": "/url?q=http://www.cm-lisboa.pt/equipamentos/equipamento/info/mercado-de-arroios&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goD3oFCAMQjAE&usg=AOvVaw2OESeWV459sC3Iv38jZ8Pw",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJ5UubZb0zGQ0RBUfpKBEQe4Y",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible restroom\",\"enabled\":true}]}]",
+     "cid": "-8756387384604932347",
+     "google_category": [
+      "Market",
+      "Tourist attraction",
+      "Wholesale market"
+     ],
+     "google_description": "Cavernous, dome-shaped venue with vendors selling fruits, vegetables, meat, seafood & other goods.",
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLelC6piUe1aaV106DdMKsvyDTwp3-sEFDEPtQW40gvL0Qe-HCe1M_VcViRLxXEj6Zx26jugn-XviKXZ_kRUIQ4IPSH5fRb9iMP9L5hxvk0S-dGVsQjy12LgGHpV7Gis_isjL38crg=w408-h306-k-no",
+     "google_phone": "+351 21 847 5819",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJ5UubZb0zGQ0RBUfpKBEQe4Y",
+     "claimed": true,
+     "latitude": 38.7352592,
+     "longitude": -9.132670599999999,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "R. Ângela Pinto 40",
+     "street_addr_supplement": "R. Ângela Pinto 40",
+     "city": "Lisbon",
+     "postal_code": "1900-221",
+     "state": null,
+     "country": "PT",
+     "address": "R. Ângela Pinto 40, Lisbon, null 1900-221, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJB0h2tZ8zGQ0R1YM-9kCUmSo",
+     "name": "31 of January Market",
+     "rating": 4.3,
+     "number_of_reviews": 2646,
+     "website": "/url?q=http://www.cm-lisboa.pt/equipamentos/equipamento/info/mercado-31-de-janeiro&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goEXoFCAMQtAE&usg=AOvVaw1ORBMC3D7BvyTONn-ikrqC",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJB0h2tZ8zGQ0R1YM-9kCUmSo",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible restroom\",\"enabled\":true}]}]",
+     "cid": "3069647627759813589",
+     "google_category": [
+      "Market",
+      "Grocery store",
+      "Health food store"
+     ],
+     "google_description": "Monthly indoor market with local vendors selling fruit, vegetables, fish, meat, pastries & plants.",
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "7 AM–2 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLcTD4JovBUA9yvNbT2XA1sD754Gnz2z6IAXpNej3fEiPMv7TeEPCFZgvSlB1Tp3hbrmW-RjyyDrBKQbsIqlhfTPisH69hunbevTsmj1jMDUSPnGAp5NTY2i8oMBv6W7m9TApFLI2ko1oL6-=w408-h306-k-no",
+     "google_phone": "+351 21 351 1616",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJB0h2tZ8zGQ0R1YM-9kCUmSo",
+     "claimed": true,
+     "latitude": 38.731186699999995,
+     "longitude": -9.1444292,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Rua Engenheiro Vieira da Silva, Praça Duque de Saldanha",
+     "street_addr_supplement": "Rua Engenheiro Vieira da Silva, Praça Duque de Saldanha",
+     "city": "Lisbon",
+     "postal_code": "1050-094",
+     "state": null,
+     "country": "PT",
+     "address": "Rua Engenheiro Vieira da Silva, Praça Duque de Saldanha, Lisbon, null 1050-094, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJi14M93U0GQ0RwhH_GPEnfc4",
+     "name": "Alfama market",
+     "rating": 4.2,
+     "number_of_reviews": 100,
+     "website": null,
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJi14M93U0GQ0RwhH_GPEnfc4",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true}]}]",
+     "cid": "-3567651413347593790",
+     "google_category": [
+      "Supermarket"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "8 AM–10:30 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "8 AM–10:30 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "8 AM–10:30 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "8 AM–10:30 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "8 AM–10:30 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "8 AM–10:30 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "8 AM–10:30 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLfEE8WoK20OZ5FBhBwRalPafdlUJtdN00o9QscG5yTjbfsnY4ruxHqvJGCALTGzLx51eL3TBOwjxpEjX5POJcfm38v9hk8a4odk23kfOzwASnJhgJdskbBkao3n4V_34pBYQn6xDoYl1bw=w408-h544-k-no",
+     "google_phone": "+351 920 610 680",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJi14M93U0GQ0RwhH_GPEnfc4",
+     "claimed": true,
+     "latitude": 38.7140057,
+     "longitude": -9.128188699999999,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Calçada de São Vicente 78/82",
+     "street_addr_supplement": "Calçada de São Vicente 78/82",
+     "city": "Lisbon",
+     "postal_code": "1100-571",
+     "state": null,
+     "country": "PT",
+     "address": "Calçada de São Vicente 78/82, Lisbon, null 1100-571, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJtTNuKowzGQ0RCjlJixsz_y4",
+     "name": "Mercado de Sapadores",
+     "rating": 4,
+     "number_of_reviews": 829,
+     "website": "/url?q=https://www.jf-penhafranca.pt/servicos/atividades-economicas/mercado-de-sapadores&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goD3oFCAMQ_wE&usg=AOvVaw1t3MMCnYRM9C-N4kwk-Uzj",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJtTNuKowzGQ0RCjlJixsz_y4",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible restroom\",\"enabled\":true}]}]",
+     "cid": "3386481638199867658",
+     "google_category": [
+      "Market",
+      "Grocery store"
+     ],
+     "google_description": "Unpretentious marketplace with produce & seafood vendors, plus beauty service providers.",
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "8 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "8 AM–11 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "8 AM–11 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "8 AM–11 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "8 AM–11 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "8 AM–12 AM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLc2nidiq0w8SEBqOYyPzQxqkApEEHaLPGLEJJtrzRAv9BBfncVtztxtr9Q30WyK49GeMCJIxeuahBOkKyTV141nbfdbPrAjnZ_0Jf5cE76XCHrwXbt5wEms3hSw8KfhGB3FyvEX9Q=w426-h240-k-no",
+     "google_phone": "+351 21 812 7543",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJtTNuKowzGQ0RCjlJixsz_y4",
+     "claimed": true,
+     "latitude": 38.721950799999995,
+     "longitude": -9.1290552,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Av. Gen. Roçadas 3",
+     "street_addr_supplement": "Av. Gen. Roçadas 3",
+     "city": "Lisbon",
+     "postal_code": "1170-340",
+     "state": null,
+     "country": "PT",
+     "address": "Av. Gen. Roçadas 3, Lisbon, null 1170-340, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJc4RWfa80GQ0RzrE0net51vY",
+     "name": "LxMarket",
+     "rating": 4.4,
+     "number_of_reviews": 565,
+     "website": "/url?q=http://www.lxmarket.pt/&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goD3oFCAMQpQI&usg=AOvVaw1zwV61xUWwraBpHFkvhEo9",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJc4RWfa80GQ0RzrE0net51vY",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true}]}]",
+     "cid": "-660206242501447218",
+     "google_category": [
+      "Market",
+      "Tourist attraction"
+     ],
+     "google_description": "Trendy flea market open Sundays for vendors of vintage clothing, art, handmade gifts & food.",
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "10 AM–6 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "10 AM–6 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "Closed"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLcJKKdpt3tfjt50Cjht7kF_9DbCF_0FEs9NuQPciUcQ67CTQAE0U3f5RI7RFLY81iNwof3pGalVmKc7HlwOlFzbkFhwJjWCF9dBQFc_37vQSRf3CRH-quFeSVMNJTCI3KCrs9zG_A=w408-h306-k-no",
+     "google_phone": "+351 917 297 189",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJc4RWfa80GQ0RzrE0net51vY",
+     "claimed": true,
+     "latitude": 38.702817599999996,
+     "longitude": -9.1791546,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "R. Rodrigues de Faria 103",
+     "street_addr_supplement": "R. Rodrigues de Faria 103",
+     "city": "Lisbon",
+     "postal_code": "1300-501",
+     "state": null,
+     "country": "PT",
+     "address": "R. Rodrigues de Faria 103, Lisbon, null 1300-501, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJg0EolXA0GQ0RmhGsddt7E6c",
+     "name": "Cais DO Rio Mercearia",
+     "rating": 4,
+     "number_of_reviews": 40,
+     "website": null,
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJg0EolXA0GQ0RmhGsddt7E6c",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true}]}]",
+     "cid": "-6407641662315818598",
+     "google_category": [
+      "Produce market",
+      "Grocery delivery service",
+      "Supermarket"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "6 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "6 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "6 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "6 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "6 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "6 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "6 AM–12 AM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLckIS7pkboWi9mN5OF-nmjQFZlVpZi78B461rIL1tk65nKZyUjHrqbjWEkkZngXdMbjiKR8HhKnXOlvbMpaIoHqfvFrjpUS4TIgPA845Oe9nT6wdkqQCkVfKLiNxIdeKyFVftMd=w408-h306-k-no",
+     "google_phone": null,
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJg0EolXA0GQ0RmhGsddt7E6c",
+     "claimed": true,
+     "latitude": 38.7069869,
+     "longitude": -9.1332379,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Terreiro do Paço, Av. Infante Dom Henrique",
+     "street_addr_supplement": "Terreiro do Paço, Av. Infante Dom Henrique",
+     "city": "Lisbon",
+     "postal_code": "1100-282",
+     "state": null,
+     "country": "PT",
+     "address": "Terreiro do Paço, Av. Infante Dom Henrique, Lisbon, null 1100-282, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJUZ2jIX8zGQ0RASEeQjjBhNk",
+     "name": "Mercado Biológico do Principe Real",
+     "rating": 4.5,
+     "number_of_reviews": 132,
+     "website": null,
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJUZ2jIX8zGQ0RASEeQjjBhNk",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true}]}]",
+     "cid": "-2772879023181782783",
+     "google_category": [
+      "Farmers' market"
+     ],
+     "google_description": "Once-a-week farmers market emphasizing organic produce & other health-conscious products.",
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "9 AM–6 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "Closed"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLc98z1_rRLPrPbSxiBtZRax7CCsDp0nrt18t46Ka96heXfIy2LMA_u4WsKUhsHv3wioKhag9JP9AlhUIAJKV1kFgNUOmZiQPdalaQis8aQyxbmI62eUA5qogMyFQG7VgKDmMcZ2=w408-h306-k-no",
+     "google_phone": null,
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJUZ2jIX8zGQ0RASEeQjjBhNk",
+     "claimed": true,
+     "latitude": 38.7159504,
+     "longitude": -9.1492235,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Praça do Príncipe Real",
+     "street_addr_supplement": "Praça do Príncipe Real",
+     "city": "Lisbon",
+     "postal_code": "1250-096",
+     "state": null,
+     "country": "PT",
+     "address": "Praça do Príncipe Real, Lisbon, null 1250-096, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJf_sFQnAzGQ0RuILf3aCnuo0",
+     "name": "Mercadito Do Lak",
+     "rating": 4.6,
+     "number_of_reviews": 26,
+     "website": null,
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJf_sFQnAzGQ0RuILf3aCnuo0",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true}]}]",
+     "cid": "-8234084659334511944",
+     "google_category": [
+      "Market",
+      "Supermarket"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "9 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "9 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "9 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "9 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "9 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "9 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "9 AM–10 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLecQ8HstjOmNafNI1HpPyN7BgwfvN6u8E_miTT-DTC_IJljeHOd_MSBZ_rXwJTzmofRVt-a-ahyd9YpFGYfW-Poh1o_TH_gF_olDkOjM1xKZEeY_va29FM1EuvkMmFpbXXlJQ0n=w408-h306-k-no",
+     "google_phone": "+351 920 073 043",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJf_sFQnAzGQ0RuILf3aCnuo0",
+     "claimed": true,
+     "latitude": 38.7238161,
+     "longitude": -9.154896599999999,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "R. Artilharia 1 39",
+     "street_addr_supplement": "R. Artilharia 1 39",
+     "city": "Lisbon",
+     "postal_code": "1250-096",
+     "state": null,
+     "country": "PT",
+     "address": "R. Artilharia 1 39, Lisbon, null 1250-096, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJtTawTAA1GQ0Reza7j14Gt-k",
+     "name": "Mercado da Ribeira",
+     "rating": 4.4,
+     "number_of_reviews": 348,
+     "website": null,
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJtTawTAA1GQ0Reza7j14Gt-k",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible restroom\",\"enabled\":true}]}]",
+     "cid": "-1605807738926188933",
+     "google_category": [
+      "Market"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "10 AM–5 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "10 AM–5 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "10 AM–5 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "10 AM–5 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "10 AM–5 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "10 AM–5 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "10 AM–12 AM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLcqHRCWctZAbljCXH-E4vmDRk3O-2o2wjDFbIoZGXi5QZwnF8dRQBEgXzBMX0nYnnGgjrJbKFjLudz6p6Bp9Qs-DVaznulGMlxuezN_qHSdCpZ-BLHiyHp1ntSrsrPrCU5-3d3F10PLkkFo=w426-h240-k-no",
+     "google_phone": null,
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJtTawTAA1GQ0Reza7j14Gt-k",
+     "claimed": true,
+     "latitude": 38.7067166,
+     "longitude": -9.145732299999999,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Av. 24 de Julho",
+     "street_addr_supplement": "Av. 24 de Julho",
+     "city": "Lisbon",
+     "postal_code": null,
+     "state": null,
+     "country": "PT",
+     "address": "Av. 24 de Julho, Lisbon, null, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJT8aajYozGQ0RxT4nli1QGwM",
+     "name": "Mercado de Santa Clara",
+     "rating": 4.3,
+     "number_of_reviews": 10988,
+     "website": "/url?q=https://www.saovicente.pt/&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goD3oFCAMQ1wM&usg=AOvVaw0ik9iDbMMBd7RNzZ2btWZ9",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJT8aajYozGQ0RxT4nli1QGwM",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible restroom\",\"enabled\":true},{\"name\":\"Wheelchair accessible seating\",\"enabled\":true}]}]",
+     "cid": "223860763207876293",
+     "google_category": [
+      "Market",
+      "Flea market",
+      "Tourist attraction"
+     ],
+     "google_description": "Major flea market, open Tues & Sat, with an eclectic mix of housewares, clothing, antiques & media.",
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "9 AM–6 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "10 AM–5 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "12–4:30 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "9 AM–5:30 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "12–4:30 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLcZv1qKxcjs97hwHB_Kawm4-v-6U6SYPkTGu6QFogfPpEYdUdToib-M4vJ5k_hY2p-MAduZTaVJjaPusS-9FfGkdDAhh2oqoWVrOoF0WqSHy0RvZEPvN-yAjmuXHuRFmhvGOzST=w408-h306-k-no",
+     "google_phone": "+351 21 886 3191",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJT8aajYozGQ0RxT4nli1QGwM",
+     "claimed": true,
+     "latitude": 38.715592099999995,
+     "longitude": -9.1254624,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Campo de Santa Clara",
+     "street_addr_supplement": "Campo de Santa Clara",
+     "city": "Lisbon",
+     "postal_code": "1100-472",
+     "state": null,
+     "country": "PT",
+     "address": "Campo de Santa Clara, Lisbon, null 1100-472, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJea3nq30zGQ0RAsO1Gu0EB18",
+     "name": "A MINHA MERCEARIA minimarket",
+     "rating": 4.7,
+     "number_of_reviews": 105,
+     "website": "/url?q=http://www.mercado28.pt/&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goD3oFCAMQ_QM&usg=AOvVaw2JlENBVNttJZtXy8S8DxAt",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJea3nq30zGQ0RAsO1Gu0EB18",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true}]}]",
+     "cid": "6847447174842008322",
+     "google_category": [
+      "Market",
+      "Produce market",
+      "Supermarket",
+      "Traditional market"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "8:30 AM–8:30 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "8:30 AM–8:30 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "8:30 AM–8:30 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "8:30 AM–8:30 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "8:30 AM–8:30 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "8:30 AM–8:30 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLcSu2cGP_5wfBiLwo-NJUqpw6pDcZk5mudI3_ZqtdEQMgAzHYkBUpmytswau5RO4ACUYA4p-oDoW65jVicOCW_KoDnW426edmLzYNovDmcMSLVmuS3asW1aC0GRkJoO_9MUcdvaNw=w532-h240-k-no",
+     "google_phone": "+351 938 243 983",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJea3nq30zGQ0RAsO1Gu0EB18",
+     "claimed": true,
+     "latitude": 38.7109561,
+     "longitude": -9.1495192,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Largo Dr. António de Sousa Macedo loja 1F",
+     "street_addr_supplement": "Largo Dr. António de Sousa Macedo loja 1F",
+     "city": "Lisbon",
+     "postal_code": "1200-153",
+     "state": null,
+     "country": "PT",
+     "address": "Largo Dr. António de Sousa Macedo loja 1F, Lisbon, null 1200-153, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJHcLCSCfNHg0RMhKt4I4DFh8",
+     "name": "Mercado Municipal de Benfica",
+     "rating": 4.3,
+     "number_of_reviews": 5356,
+     "website": "/url?q=https://amanhecer.pt/&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goD3oFCAMQpQQ&usg=AOvVaw0_8nzmHvwS7dKJlS9zaceT",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJHcLCSCfNHg0RMhKt4I4DFh8",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible restroom\",\"enabled\":true}]}]",
+     "cid": "2239981776853078578",
+     "google_category": [
+      "Market"
+     ],
+     "google_description": "Large, dome-shaped venue featuring diverse merchants for fresh produce, meat, seafood & more.",
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "8 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "8 AM–12:30 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "8 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "8 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "8 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "8 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "8 AM–7 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLcKHGzA-MavxJI7pTZJwgsrDFvHGCt3tq_wYfUjTjogurqSNyIl68GoSKdtmrF7tWim39vDJBvPZ3-tEqsUpObfN7sxZcqACzOSmjlgifluAjIHgBUCeRxX4QcHJnQNCyPlBaBj=w408-h306-k-no",
+     "google_phone": "+351 21 045 5139",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJHcLCSCfNHg0RMhKt4I4DFh8",
+     "claimed": true,
+     "latitude": 38.7508607,
+     "longitude": -9.2060088,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "R. João Frederico Ludovice 354",
+     "street_addr_supplement": "R. João Frederico Ludovice 354",
+     "city": "Lisbon",
+     "postal_code": "1500-354",
+     "state": null,
+     "country": "PT",
+     "address": "R. João Frederico Ludovice 354, Lisbon, null 1500-354, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJAYrxkPozGQ0R7AhzParkqQc",
+     "name": "Mercado Oriental Martim Moniz",
+     "rating": 4.5,
+     "number_of_reviews": 2223,
+     "website": "/url?q=https://www.instagram.com/mercadooriental.martimmoniz/%3Fhl%3Den&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goC3oFCAMQxwQ&usg=AOvVaw2A5SqLvHhwuBqBdQVmC7TC",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJAYrxkPozGQ0R7AhzParkqQc",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible seating\",\"enabled\":true}]}]",
+     "cid": "552223849156118764",
+     "google_category": [
+      "Asian restaurant",
+      "Food court",
+      "Japanese restaurant",
+      "Supermarket"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "10 AM–9:30 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "12–9:30 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "12–9:30 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "12–9:30 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "12–9:30 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "12–9:30 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "12–10:30 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLd5rYhheOZDnK7pyokq34yxw9CDtQ2mCyky2QsCa-6WJKC_Cqiw7Aqr9eCkY7M3LCyfQ9zljE-i1LbEbkeuHt-KFXW8jtwLrc1F7FLiDceRw7tGocblJnpVpz4bWVHuMFzNOqDk=w426-h240-k-no",
+     "google_phone": null,
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJAYrxkPozGQ0R7AhzParkqQc",
+     "claimed": true,
+     "latitude": 38.7159493,
+     "longitude": -9.136948,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "R. da Palma 41A",
+     "street_addr_supplement": "R. da Palma 41A",
+     "city": "Lisbon",
+     "postal_code": "1100-390",
+     "state": null,
+     "country": "PT",
+     "address": "R. da Palma 41A, Lisbon, null 1100-390, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJK5ZUeX7LHg0RDqxL8r4fyYE",
+     "name": "Mercado de Algés",
+     "rating": 4.2,
+     "number_of_reviews": 10509,
+     "website": "/url?q=http://www.mercadodealges.pt/&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goD3oFCAMQ7QQ&usg=AOvVaw07WNB3QaPpLW2VeJvun2Wi",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJK5ZUeX7LHg0RDqxL8r4fyYE",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true},{\"name\":\"Wheelchair accessible restroom\",\"enabled\":true}]}]",
+     "cid": "-9094703067528713202",
+     "google_category": [
+      "Market",
+      "Food court"
+     ],
+     "google_description": "Contemporary market & food court with sports on big-screen TVs, plus outdoor seating.",
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "11 AM–2 AM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "11 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "11 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "11 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "11 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "11 AM–12 AM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "11 AM–2 AM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLet_CJkkh4vMGMqbtuMgBov8uMTVKrrKlpsxUiEUSWW4GiJNG9qwGlDBXEflI4y0sowmDky5Jl25gA19LAOichWs063vvAn7193IY6xOemYawTxp1H3MKjqMs75BFzrAzJMQC8edg=w408-h306-k-no",
+     "google_phone": "+351 914 497 005",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJK5ZUeX7LHg0RDqxL8r4fyYE",
+     "claimed": true,
+     "latitude": 38.7012453,
+     "longitude": -9.228293299999999,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "R. Dr. Manuel de Arriaga",
+     "street_addr_supplement": "R. Dr. Manuel de Arriaga",
+     "city": "Algés",
+     "postal_code": "1495-037",
+     "state": null,
+     "country": "PT",
+     "address": "R. Dr. Manuel de Arriaga, Algés, null 1495-037, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJKeOYBbM1GQ0RnYgu1j4RtE8",
+     "name": "Supermarket Cais Sodre",
+     "rating": 3.4,
+     "number_of_reviews": 28,
+     "website": null,
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJKeOYBbM1GQ0RnYgu1j4RtE8",
+     "about": null,
+     "cid": "5743234386383243421",
+     "google_category": [
+      "Grocery store"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "8:30 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "8:30 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "8:30 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "8:30 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "8:30 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "8:30 AM–10 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "8:30 AM–10 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLeuxQ_1bxp89ElCsaHg-T_y2AyZp2HgITM4mxzYhAFqWdXLT2gr1KWjpmkokxsV45HoH9Lwt60fVvWo_CcZ-McvmhAPMLXrMnJNOnJCL9r_z0X9S-U20nZxcdCZvWwHVs5XCms=w408-h306-k-no",
+     "google_phone": null,
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJKeOYBbM1GQ0RnYgu1j4RtE8",
+     "claimed": true,
+     "latitude": 38.7068821,
+     "longitude": -9.1424065,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "R. Bernardino Costa 17",
+     "street_addr_supplement": "R. Bernardino Costa 17",
+     "city": "Lisbon",
+     "postal_code": null,
+     "state": null,
+     "country": "PT",
+     "address": "R. Bernardino Costa 17, Lisbon, null, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJbyCqvM8zGQ0R8NBAZs_9Fcw",
+     "name": "Feira da Ladra",
+     "rating": 4.3,
+     "number_of_reviews": 2462,
+     "website": "/url?q=https://www.lisboa.pt/pontos-de-interesse/detalhe/feira-da-ladra&opi=79508299&sa=U&ved=2ahUKEwi7oIHqn4eYAxV-nGoFHc8cIZ4Q61goD3oFCAMQtAU&usg=AOvVaw1qaF_3x0018uvczxpDgUJZ",
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJbyCqvM8zGQ0R8NBAZs_9Fcw",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true}]}]",
+     "cid": "-3740804848245747472",
+     "google_category": [
+      "Flea market"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "9 AM–6 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "9 AM–6 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "Closed"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "Closed"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLdxPLVSsA4_90HgPLMUU8ekzJd1NfqUfmSgiFHMnqvLK--51QvweP0dI3WIr1_soYzezaWDJWMmyZHcW1ozb36PmQlUQKt5PnL0ZV90LAusqccgjC86rI-amZpRjhb2yAptIGoJfg=w408-h306-k-no",
+     "google_phone": "+351 21 798 8000",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJbyCqvM8zGQ0R8NBAZs_9Fcw",
+     "claimed": true,
+     "latitude": 38.715247999999995,
+     "longitude": -9.1262075,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "Campo de Santa Clara",
+     "street_addr_supplement": "Campo de Santa Clara",
+     "city": "Lisbon",
+     "postal_code": "1100-472",
+     "state": null,
+     "country": "PT",
+     "address": "Campo de Santa Clara, Lisbon, null 1100-472, PT",
+     "primary_tags": [],
+     "open_status": null
+    },
+    {
+     "place_id": "ChIJyTy9RXozGQ0R-uaRheQ9ivo",
+     "name": "Mercado do Rato",
+     "rating": 4.2,
+     "number_of_reviews": 217,
+     "website": null,
+     "google_maps_url": "https://www.google.com/maps/place/?q=place_id:ChIJyTy9RXozGQ0R-uaRheQ9ivo",
+     "about": "[{\"id\":\"accessibility\",\"name\":\"Accessibility\",\"options\":[{\"name\":\"Wheelchair accessible entrance\",\"enabled\":true},{\"name\":\"Wheelchair accessible parking lot\",\"enabled\":true}]}]",
+     "cid": "-393433965738727686",
+     "google_category": [
+      "Market"
+     ],
+     "google_description": null,
+     "google_hours": [
+      {
+       "day": "Saturday",
+       "times": [
+        "11 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Sunday",
+       "times": [
+        "11 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Monday",
+       "times": [
+        "11 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Tuesday",
+       "times": [
+        "11 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Wednesday",
+       "times": [
+        "11 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Thursday",
+       "times": [
+        "11 AM–7 PM"
+       ]
+      },
+      {
+       "day": "Friday",
+       "times": [
+        "11 AM–7 PM"
+       ]
+      }
+     ],
+     "google_image": "https://lh3.googleusercontent.com/grass-cs/AABkmLdM0TogzZjvD0T4-ZfDVqR3p1vwNrYYy3PPmORivBuGcZjCJrDOrmsQ9c7HW-Eg9dM-kMZTuBh36yHKnS0Lp24ZeI6d6gNiP4c-a62d4vU1Bwlx2LFckUr_TNoLrpP_Rfma8JM01Q=w426-h240-k-no",
+     "google_phone": "+351 966 188 173",
+     "google_price_range_dollar_sign": null,
+     "google_reviews_url": "https://search.google.com/local/reviews?placeid=ChIJyTy9RXozGQ0R-uaRheQ9ivo",
+     "claimed": true,
+     "latitude": 38.7211937,
+     "longitude": -9.1534205,
+     "google_orders_urls": [],
+     "order_online_url": null,
+     "borough": null,
+     "street_addr": "R. Alexandre Herculano 64",
+     "street_addr_supplement": "R. Alexandre Herculano 64",
+     "city": "Lisbon",
+     "postal_code": "1250-012",
+     "state": null,
+     "country": "PT",
+     "address": "R. Alexandre Herculano 64, Lisbon, null 1250-012, PT",
+     "primary_tags": [],
+     "open_status": null
+    }
+   ]
+  },
+  "type": "google-maps"
+ },
+ "json": {
+  "requested": false,
+  "success": null,
+  "data": null
+ },
+ "metadata": {},
+ "cache_metadata": {
+  "status": "miss",
+  "age_ms": 0
+ }
+}

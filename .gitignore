@@ -7,3 +7,4 @@ dist
 coverage
 .superpowers/
 .DS_Store
+spikes/out/
