@@ -16,7 +16,7 @@ const TIMEOUT_MS = 10_000;
 /** What every failure to talk to the server becomes. The badge hides on it. */
 export const UNREACHABLE: ApiResult<never> = { success: false, data: null, error: 'unreachable' };
 
-function isEnvelope(value: unknown): value is ApiResult<unknown> {
+export function isEnvelope(value: unknown): value is ApiResult<unknown> {
   if (value === null || typeof value !== 'object') {
     return false;
   }
