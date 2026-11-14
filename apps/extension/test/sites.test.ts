@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { adapterFor } from '../src/sites';
 
 /**
- * These pages are synthetic: they carry the standard metadata (JSON-LD, OpenGraph) the adapters
- * read. Real saved pages replace them once the listing-extraction spike has run.
+ * Two kinds of page: small synthetic ones that carry the standard metadata (JSON-LD, OpenGraph)
+ * the adapters read, and "live" ones whose values were copied from real Airbnb and Booking.com
+ * listing pages on 2026-11-14.
  */
 function page(head: string, body = ''): Document {
   return new DOMParser().parseFromString(`<!doctype html><html><head>${head}</head><body>${body}</body></html>`, 'text/html');

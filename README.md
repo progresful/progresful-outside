@@ -112,7 +112,8 @@ winter can still show green trees.
   places only.
 - Booking.com drops the dates from the address for some visitors; the video then covers the next two weeks.
 - The Viator, GetYourGuide and Songkick parsers read each site's results page as it is today. If a site
-  changes its page, that scene disappears from new videos until the parser is updated; nothing wrong is shown.
+  changes its page, that scene should disappear from new videos until the parser is updated: a card the parser
+  cannot read with confidence (no clear title, an ambiguous price) is dropped rather than shown.
 - Street View scenes, MP4 export and the other later-tier ideas in the design are not built.
 
 ## Demo checklist

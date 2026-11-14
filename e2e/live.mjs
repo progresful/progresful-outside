@@ -5,6 +5,8 @@
  *   node e2e/live.mjs airbnb            # finds a Lisbon listing by itself (or: booking)
  *   node e2e/live.mjs <listing url>     # a specific Airbnb or Booking.com listing
  *
+ * LIVE_PLACE=Innsbruck--Austria LIVE_CHECKIN=2027-01-15 LIVE_CHECKOUT=2027-01-20 choose where and when
+ * the self-found Airbnb listing is.
  * Set CHROMIUM=<path to a Chromium binary> to use one other than Playwright's own; HEADED=1 to watch;
  * INTERESTS=water,nightlife to also change the interests afterwards and wait for the rebuilt video.
  * Screenshots and a page dump go to e2e/out/ (git-ignored).
@@ -37,12 +39,16 @@ const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir()
   ],
 });
 
+const place = process.env.LIVE_PLACE ?? 'Lisbon--Portugal';
+const checkIn = process.env.LIVE_CHECKIN ?? '2026-11-20';
+const checkOut = process.env.LIVE_CHECKOUT ?? '2026-11-24';
+
 async function findAirbnbListing(page) {
-  await page.goto('https://www.airbnb.com/s/Lisbon--Portugal/homes?checkin=2026-11-20&checkout=2026-11-24&adults=2', { waitUntil: 'domcontentloaded' });
+  await page.goto(`https://www.airbnb.com/s/${place}/homes?checkin=${checkIn}&checkout=${checkOut}&adults=2`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('a[href*="/rooms/"]', { timeout: 30_000 });
   const href = await page.locator('a[href*="/rooms/"]').first().getAttribute('href');
   const id = /\/rooms\/(\d+)/.exec(href ?? '')?.[1];
-  return `https://www.airbnb.com/rooms/${id}?check_in=2026-11-20&check_out=2026-11-24&adults=2`;
+  return `https://www.airbnb.com/rooms/${id}?check_in=${checkIn}&check_out=${checkOut}&adults=2`;
 }
 
 async function findBookingListing(page) {
