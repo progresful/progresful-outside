@@ -7,10 +7,13 @@
     "typecheck": "pnpm -r typecheck",
     "dev:server": "pnpm --filter @outside/server dev",
     "dev:extension": "pnpm --filter @outside/extension dev",
-    "build:extension": "pnpm --filter @outside/extension build"
+    "build:extension": "pnpm --filter @outside/extension build",
+    "test:coverage": "pnpm -r exec vitest run --coverage --coverage.include='src/**'",
+    "check:live": "node e2e/live.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.65.1",
+    "@vitest/coverage-v8": "^5.1.0",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }
