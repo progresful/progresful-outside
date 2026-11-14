@@ -7,6 +7,11 @@ export interface VideoKeyInput {
   interests: readonly InterestId[];
   checkIn?: string;
   checkOut?: string;
+  /**
+   * Where the page says the listing is. A request whose page content belongs to another listing
+   * (a stale page after an in-tab navigation) then gets a video of its own, not this one's.
+   */
+  place?: string;
   templateVersion: number;
 }
 
@@ -24,6 +29,7 @@ export function videoKey(input: VideoKeyInput): string {
       [...input.interests].sort(),
       input.checkIn ?? null,
       input.checkOut ?? null,
+      input.place ?? null,
       input.templateVersion,
     ]),
   );

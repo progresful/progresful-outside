@@ -17,7 +17,7 @@ narrated video about the area, built from live web data and tuned to your intere
 
 ## Setup
 
-Needs Node 20+ and pnpm.
+Needs Node 22.9 or newer (the scripts use `--env-file-if-exists`) and pnpm.
 
 ```bash
 pnpm install

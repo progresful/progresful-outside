@@ -68,6 +68,20 @@ export function metaContent(doc: Document, property: string): string | undefined
   return text(tag?.getAttribute('content'));
 }
 
+/**
+ * The addresses a listing page gives for itself: its canonical link, its share address and its
+ * JSON-LD url. Right after an in-tab navigation these still name the previous listing, which is
+ * how an adapter tells that the document has not caught up with the address bar.
+ */
+export function selfUrls(doc: Document, entity: Entity): string[] {
+  const candidates = [
+    doc.querySelector('link[rel="canonical"]')?.getAttribute('href'),
+    metaContent(doc, 'og:url'),
+    text(entity.url),
+  ];
+  return candidates.flatMap((url) => text(url) ?? []);
+}
+
 /** "Locality, Country" from a schema.org address, or the address itself when it is plain text. */
 export function locationFromAddress(address: unknown): string | undefined {
   if (!isEntity(address)) {

@@ -29,6 +29,16 @@ describe('app', () => {
     expect(res.json()).toEqual({ success: false, data: null, error: 'Not found' });
   });
 
+  it('allows a tab that polls every 1.5 s, plus a few more, by default', async () => {
+    const app = buildApp({});
+    const codes = new Set<number>();
+    for (let request = 0; request < 300; request += 1) {
+      codes.add((await app.inject({ method: 'GET', url: '/api/health' })).statusCode);
+    }
+
+    expect([...codes]).toEqual([200]);
+  });
+
   it('rate limits per IP with a 429 envelope', async () => {
     const app = buildApp({ rateLimitMax: 2 });
     await app.inject({ method: 'GET', url: '/api/health' });

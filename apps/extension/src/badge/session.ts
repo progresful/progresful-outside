@@ -1,4 +1,4 @@
-import type { ApiResult, CreateVideoResponse, ListingContext, VideoStatusResponse } from '@outside/shared';
+import { RATE_LIMITED_ERROR, type ApiResult, type CreateVideoResponse, type ListingContext, type VideoStatusResponse } from '@outside/shared';
 import { UNREACHABLE, isEnvelope } from '../apiClient';
 import type { Message } from '../messages';
 import type { Settings } from '../storage';
@@ -22,6 +22,11 @@ export interface ListingSession {
   restart(): void;
   /** Stops polling. Replies that arrive afterwards are ignored. */
   stop(): void;
+}
+
+/** The server asked us to slow down. Nothing is wrong: wait a beat and ask again. */
+function isBusy(res: ApiResult<unknown>): boolean {
+  return !res.success && res.error === RATE_LIMITED_ERROR;
 }
 
 function toResult<T>(raw: unknown): ApiResult<T> {
@@ -68,6 +73,10 @@ export function createListingSession(deps: SessionDeps): ListingSession {
         if (run !== token) {
           return;
         }
+        if (isBusy(res)) {
+          poll(videoId, run);
+          return;
+        }
         dispatch({ type: 'status', videoId, res });
         if (res.success && isBuilding(res.data.status)) {
           poll(videoId, run);
@@ -80,6 +89,17 @@ export function createListingSession(deps: SessionDeps): ListingSession {
     const settings = await deps.getSettings();
     const res = await ask<CreateVideoResponse>({ type: 'video:create', listing, interests: settings.interests });
     if (run !== token) {
+      return;
+    }
+    if (isBusy(res)) {
+      timer = deps.setTimeout(() => {
+        timer = undefined;
+        begin(listing, run).catch(() => {
+          if (run === token) {
+            dispatch({ type: 'unreachable' });
+          }
+        });
+      }, POLL_MS);
       return;
     }
     if (!res.success) {

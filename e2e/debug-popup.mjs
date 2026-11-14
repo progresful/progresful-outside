@@ -39,11 +39,27 @@ try {
     title: document.title,
     ld: [...document.querySelectorAll('script[type="application/ld+json"]')].map((node) => (node.textContent ?? '').slice(0, 400)),
     hero: Boolean(document.querySelector('[data-section-id="HERO_DEFAULT"]')),
+    canonical: document.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? null,
+    ogUrl: document.querySelector('meta[property="og:url"]')?.getAttribute('content') ?? null,
+    ldUrls: [...document.querySelectorAll('script[type="application/ld+json"]')].map((node) => {
+      try {
+        const parsed = JSON.parse(node.textContent ?? '');
+        return { type: parsed['@type'], url: parsed.url ?? null, identifier: parsed.identifier ?? null };
+      } catch {
+        return null;
+      }
+    }),
   }));
+  log('canonical:', listing.canonical, '| og:url:', listing.ogUrl);
+  log('json-ld ids:', JSON.stringify(listing.ldUrls));
   log('title:', listing.title);
   log('json-ld blocks:', listing.ld.length, listing.ld.map((text) => text.slice(0, 160)).join(' || '));
   log('hero found:', listing.hero);
 
+  if (process.env.NO_POPUP === '1') {
+    process.exitCode = 0;
+    throw new Error('done');
+  }
   await page.bringToFront();
   await page.waitForTimeout(500);
   const opened = await worker.evaluate(() => chrome.action.openPopup().then(() => 'opened', (error) => `failed: ${error?.message}`));
@@ -80,6 +96,10 @@ try {
       log('popup screenshot:', JSON.stringify(shot).slice(0, 200));
     }
     socket.close();
+  }
+} catch (error) {
+  if (!(error instanceof Error) || error.message !== 'done') {
+    throw error;
   }
 } finally {
   await context.close();

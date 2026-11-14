@@ -63,6 +63,13 @@ describe('cache keys', () => {
     expect(new Set([key, ...variants]).size).toBe(6);
   });
 
+  it('videoKey changes with where the listing says it is', () => {
+    const key = videoKey({ ...base, interests: [...base.interests], place: 'lisbon, portugal|38.71|-9.14' });
+
+    expect(key).not.toBe(videoKey({ ...base, interests: [...base.interests] }));
+    expect(key).not.toBe(videoKey({ ...base, interests: [...base.interests], place: 'porto, portugal|41.15|-8.61' }));
+  });
+
   it('videoKey is a sha256 hex string', () => {
     expect(videoKey({ ...base, interests: [...base.interests] })).toMatch(/^[0-9a-f]{64}$/);
   });

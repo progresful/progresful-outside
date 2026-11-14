@@ -7,6 +7,9 @@ export type ApiResult<T> =
   | { success: true; data: T; error: null }
   | { success: false; data: null; error: string };
 
+/** The error text of the server's 429 reply. A client seeing it should wait and ask again. */
+export const RATE_LIMITED_ERROR = 'Too many requests';
+
 export const VIDEO_STATUSES = ['queued', 'gathering', 'writing', 'voicing', 'ready', 'failed'] as const;
 export type VideoStatus = (typeof VIDEO_STATUSES)[number];
 

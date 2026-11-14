@@ -1,5 +1,6 @@
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import { RATE_LIMITED_ERROR } from '@outside/shared';
 import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 import { fail } from './envelope';
 import { healthRoutes } from './routes/health';
@@ -16,13 +17,17 @@ export interface AppDeps {
 }
 
 const BODY_LIMIT_BYTES = 64 * 1024;
-const DEFAULT_RATE_LIMIT_MAX = 60;
+/**
+ * Per client per minute. One tab polls every 1.5 s while its video builds and a play fetches a
+ * handful of media files, so the allowance has to cover several listings at once.
+ */
+const DEFAULT_RATE_LIMIT_MAX = 600;
 const EXTENSION_ORIGIN = /^chrome-extension:\/\//;
 
 const PUBLIC_ERRORS: Readonly<Record<number, string>> = {
   400: 'Invalid request',
   413: 'Request too large',
-  429: 'Too many requests',
+  429: RATE_LIMITED_ERROR,
 };
 
 export function buildApp(deps: AppDeps): FastifyInstance {

@@ -2,7 +2,7 @@ import type { ListingContext } from '@outside/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BadgeState } from '../src/badge/badgeState';
 import { EXTRACT_RETRY_MS, createPageController, type PageDeps } from '../src/badge/pageController';
-import type { SiteAdapter } from '../src/sites';
+import { adapterFor as realAdapterFor, type SiteAdapter } from '../src/sites';
 import { DEFAULT_SETTINGS, type Settings } from '../src/storage';
 
 const listingA: ListingContext = {
@@ -74,6 +74,42 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+});
+
+describe('page controller with the real Airbnb adapter', () => {
+  function describeListing(id: string, name: string, city: string): void {
+    document.head.innerHTML = `<title>${name} - Apartments for Rent in ${city}, Portugal - Airbnb</title>
+      <meta property="og:url" content="https://www.airbnb.com/rooms/${id}">
+      <meta property="og:image" content="https://a0.muscache.com/im/pictures/${id}.jpg">
+      <script type="application/ld+json">${JSON.stringify({ '@type': 'VacationRental', name, latitude: 38.7, longitude: -9.1, address: { addressLocality: city } })}</script>`;
+  }
+
+  afterEach(() => {
+    document.head.innerHTML = '';
+  });
+
+  it('waits for the page to become the new listing after an in-tab navigation', async () => {
+    const h = harness();
+    h.deps = { ...h.deps, adapterFor: realAdapterFor };
+    const controller = createPageController(h.deps);
+    describeListing('111', 'Flat A', 'Lisbon');
+    controller.onUrl('https://www.airbnb.com/rooms/111');
+    await flush();
+    expect(h.session.start).toHaveBeenLastCalledWith(expect.objectContaining({ listingId: '111', title: 'Flat A' }));
+
+    // The address changes first; the document still describes listing 111.
+    controller.onUrl('https://www.airbnb.com/rooms/222');
+    await flush();
+    expect(h.session.start).toHaveBeenCalledTimes(1);
+
+    describeListing('222', 'Flat B', 'Porto');
+    await vi.advanceTimersByTimeAsync(EXTRACT_RETRY_MS);
+
+    expect(h.session.start).toHaveBeenCalledTimes(2);
+    expect(h.session.start).toHaveBeenLastCalledWith(
+      expect.objectContaining({ listingId: '222', title: 'Flat B', locationText: 'Porto, Portugal' }),
+    );
+  });
 });
 
 describe('page controller', () => {

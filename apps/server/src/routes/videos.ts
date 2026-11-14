@@ -2,6 +2,7 @@ import {
   CreateVideoRequestSchema,
   effectiveInterests,
   type CreateVideoResponse,
+  type ListingContext,
   type VideoManifest,
   type VideoStatusResponse,
 } from '@outside/shared';
@@ -45,16 +46,32 @@ function publicError(error: unknown): string {
   return error instanceof NotEnoughDataError ? error.message : GENERIC_FAILURE;
 }
 
+const COORDINATE_DECIMALS = 2;
+
+/** The listing's stated place, coarse enough to be the same on every visit to the same listing. */
+function placeFingerprint(listing: ListingContext): string {
+  const coordinate = (value: number | undefined): string => (value === undefined ? '' : value.toFixed(COORDINATE_DECIMALS));
+  return [listing.locationText.trim().toLowerCase(), coordinate(listing.lat), coordinate(listing.lng)].join('|');
+}
+
 function startJob(deps: VideoRouteDeps, log: FastifyBaseLogger, job: Job, input: PipelineInput): void {
   deps.jobs.put(job);
-  const report = (update: StageUpdate): void => deps.jobs.put({ ...job, ...update });
+  // Sources still finishing after the job has ended keep reporting; a settled job stays as it is.
+  let settled = false;
+  const report = (update: StageUpdate): void => {
+    if (!settled) {
+      deps.jobs.put({ ...job, ...update });
+    }
+  };
   deps
     .run(input, report)
     .then((manifest) => {
+      settled = true;
       deps.cache.set(manifestKey(job.id), manifest, { fetchedAt: deps.now() });
       deps.jobs.delete(job.id);
     })
     .catch((error: unknown) => {
+      settled = true;
       const message = error instanceof CreditsExhaustedError ? 'Context.dev credits are exhausted' : 'video job failed';
       log.error({ err: error, videoId: job.id }, message);
       deps.jobs.put({ ...job, status: 'failed', stage: 'Failed', progress: 0, error: publicError(error) });
@@ -76,6 +93,7 @@ export function videoRoutes(deps: VideoRouteDeps): FastifyPluginAsync {
         interests,
         checkIn: listing.checkIn,
         checkOut: listing.checkOut,
+        place: placeFingerprint(listing),
         templateVersion: TEMPLATE_VERSION,
       });
       const videoId = key.slice(0, VIDEO_ID_LENGTH);

@@ -9,6 +9,7 @@ import {
   locationFromAddress,
   lodgingEntity,
   metaContent,
+  selfUrls,
   text,
   uniquePhotos,
   type Entity,
@@ -87,6 +88,10 @@ export const airbnbAdapter: SiteAdapter = {
       return null;
     }
     const entity = lodgingEntity(doc);
+    // Only a page that says it is this listing is read; otherwise it is another listing's page.
+    if (!selfUrls(doc, entity).some((self) => airbnbAdapter.matchListing(self)?.listingId === match.listingId)) {
+      return null;
+    }
     return finalize({
       site: 'airbnb',
       listingId: match.listingId,

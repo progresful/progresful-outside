@@ -102,6 +102,32 @@ describe('listing session', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('waits and asks again when the server says it is busy, instead of giving up', async () => {
+    const busy = { success: false, data: null, error: 'Too many requests' };
+    const replies = [created('v1'), busy, busy, progress('ready')];
+    const h = harness(async () => replies.shift());
+
+    createListingSession(h.deps).start(listing('1'));
+    await flush();
+    await vi.advanceTimersByTimeAsync(POLL_MS * 3);
+
+    expect(h.states().some((state) => state.kind === 'error')).toBe(false);
+    expect(h.states().at(-1)).toEqual({ kind: 'ready', videoId: 'v1' });
+  });
+
+  it('waits and asks again when the server is busy at the very first request', async () => {
+    const busy = { success: false, data: null, error: 'Too many requests' };
+    const replies = [busy, created('v1'), progress('ready')];
+    const h = harness(async () => replies.shift());
+
+    createListingSession(h.deps).start(listing('1'));
+    await flush();
+    await vi.advanceTimersByTimeAsync(POLL_MS * 3);
+
+    expect(h.states().some((state) => state.kind === 'error')).toBe(false);
+    expect(h.states().at(-1)).toEqual({ kind: 'ready', videoId: 'v1' });
+  });
+
   it('shows offline and stops polling when the server is unreachable', async () => {
     const replies = [created('v1'), UNREACHABLE];
     const h = harness(async () => replies.shift());

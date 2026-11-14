@@ -10,6 +10,7 @@ import {
   lodgingEntity,
   metaContent,
   num,
+  selfUrls,
   text,
   uniquePhotos,
   type Entity,
@@ -102,6 +103,10 @@ export const bookingAdapter: SiteAdapter = {
       return null;
     }
     const entity = lodgingEntity(doc);
+    // Only a page that says it is this listing is read; otherwise it is another listing's page.
+    if (!selfUrls(doc, entity).some((self) => bookingAdapter.matchListing(self)?.listingId === match.listingId)) {
+      return null;
+    }
     const fromEntity = coordinates(entity);
     const fromPage = coordinatesFromPage(doc);
     return finalize({

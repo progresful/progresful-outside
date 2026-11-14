@@ -162,6 +162,30 @@ describe('GET /api/videos/:id', () => {
     expect(after.json().data).toMatchObject({ status: 'ready', progress: 1, manifest: { id: videoId } });
   });
 
+  it('keeps a failed job failed when a late stage update arrives', async () => {
+    const h = harness();
+    const { videoId } = (await post(h.app, { listing, interests: [] })).json().data;
+    h.fail(new Error('boom'));
+    await settle();
+
+    // Other sources are still finishing and report their stage after the job has failed.
+    h.stage({ status: 'gathering', stage: 'Checking live prices', progress: 0.6 });
+
+    const res = await h.app.inject({ method: 'GET', url: `/api/videos/${videoId}` });
+    expect(res.json().data).toMatchObject({ status: 'failed', stage: 'Failed' });
+  });
+
+  it('gives the same listing id its own video when the page describes another place', async () => {
+    const h = harness();
+    const first = (await post(h.app, { listing, interests: [] })).json().data.videoId;
+    const elsewhere = { ...listing, locationText: 'Porto, Portugal', lat: 41.15, lng: -8.61 };
+
+    const second = (await post(h.app, { listing: elsewhere, interests: [] })).json().data.videoId;
+
+    expect(second).not.toBe(first);
+    expect(h.run).toHaveBeenCalledTimes(2);
+  });
+
   it('tells the user when the area has too little data', async () => {
     const { app, fail } = harness();
     const { videoId } = (await post(app, body)).json().data;

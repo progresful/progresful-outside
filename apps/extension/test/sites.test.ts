@@ -13,6 +13,7 @@ const airbnbUrl = 'https://www.airbnb.com/rooms/12345?check_in=2026-12-12&check_
 const airbnbDoc = page(
   `<title>Flat with a view - Apartments for Rent in Lisbon, Portugal - Airbnb</title>
    <meta property="og:title" content="Rental unit in Lisbon · ★4.92 · 1 bedroom · 1 bed · 1 bath">
+   <meta property="og:url" content="https://www.airbnb.com/rooms/12345">
    <meta property="og:image" content="https://a0.muscache.com/im/pictures/og.jpg">
    <script type="application/ld+json">${JSON.stringify({
      '@context': 'https://schema.org',
@@ -29,6 +30,7 @@ const airbnbDoc = page(
 const bookingUrl = 'https://www.booking.com/hotel/pt/some-hotel.en-gb.html?checkin=2026-12-12&checkout=2026-12-16&group_adults=2';
 const bookingDoc = page(
   `<title>Some Hotel, Lisbon – Updated 2026 Prices</title>
+   <link rel="canonical" href="https://www.booking.com/hotel/pt/some-hotel.en-gb.html">
    <meta property="og:image" content="https://cf.bstatic.com/xdata/images/hotel/max1024x768/og.jpg">
    <script type="application/ld+json">${JSON.stringify({
      '@context': 'https://schema.org',
@@ -44,6 +46,8 @@ const bookingDoc = page(
 const liveAirbnbDoc = page(
   `<title>Alfama - Beco do Belo Studio - Apartments for Rent in Lisbon, Li, Portugal - Airbnb</title>
    <meta property="og:title" content="Rental unit in Lisbon · ★4.85 · 1 bedroom · 1 bed · 1 bath">
+   <meta property="og:url" content="https://www.airbnb.com/rooms/12345">
+   <link rel="canonical" href="">
    <meta property="og:image" content="https://a0.muscache.com/im/pictures/hosting/Hosting-X/original/25bd02a7.jpeg">
    <script type="application/ld+json">${JSON.stringify({
      '@context': 'https://schema.org',
@@ -67,7 +71,7 @@ const liveBookingDoc = page(
      '@context': 'http://schema.org',
      '@type': 'Hotel',
      name: 'Hotel Avenida Palace',
-     url: 'https://www.booking.com/hotel/pt/avenida-palace.en-gb.html',
+     url: 'https://www.booking.com/hotel/pt/some-hotel.en-gb.html',
      image: 'https://cf.bstatic.com/xdata/images/hotel/max500/21303863.jpg?k=8b47&o=&hp=1',
      address: {
        '@type': 'PostalAddress',
@@ -116,7 +120,7 @@ describe('on live page shapes', () => {
     ['Flat - Airbnb', 'Lisbon'],
   ])('reads the country from "%s"', (title, expected) => {
     const doc = page(
-      `<title>${title}</title><script type="application/ld+json">${JSON.stringify({ '@type': 'VacationRental', name: 'Flat', address: { addressLocality: expected.split(',')[0] } })}</script>`,
+      `<title>${title}</title><meta property="og:url" content="https://www.airbnb.com/rooms/12345"><script type="application/ld+json">${JSON.stringify({ '@type': 'VacationRental', name: 'Flat', address: { addressLocality: expected.split(',')[0] } })}</script>`,
     );
 
     expect(adapterFor(airbnbUrl)!.adapter.extractListing(doc, airbnbUrl)?.locationText).toBe(expected);
@@ -156,6 +160,35 @@ describe('on live page shapes', () => {
     const found = adapterFor(bookingUrl)!.adapter.findGallery(liveBookingDoc);
 
     expect(found?.getAttribute('data-testid')).toBe('GalleryUnifiedDesktop-wrapper');
+  });
+});
+
+describe('a document that is not the listing in the address bar', () => {
+  // After an in-tab navigation the address changes before the page does.
+  it('is refused when the Airbnb page still names the previous listing', () => {
+    const next = 'https://www.airbnb.com/rooms/99999?check_in=2026-12-12&check_out=2026-12-16';
+
+    expect(adapterFor(next)!.adapter.extractListing(airbnbDoc, next)).toBeNull();
+    expect(adapterFor(next)!.adapter.extractListing(liveAirbnbDoc, next)).toBeNull();
+  });
+
+  it('is refused when the Booking.com page still names the previous hotel', () => {
+    const next = 'https://www.booking.com/hotel/pt/another-hotel.en-gb.html';
+
+    expect(adapterFor(next)!.adapter.extractListing(bookingDoc, next)).toBeNull();
+    expect(adapterFor(next)!.adapter.extractListing(liveBookingDoc, next)).toBeNull();
+  });
+
+  it('is refused when the page does not say which listing it is', () => {
+    const anonymous = page('<title>Flat - Airbnb</title><meta property="og:title" content="Home in Porto · ★5">');
+
+    expect(adapterFor(airbnbUrl)!.adapter.extractListing(anonymous, airbnbUrl)).toBeNull();
+  });
+
+  it('is accepted whatever language version of the Booking.com page names the hotel', () => {
+    const german = 'https://www.booking.com/hotel/pt/some-hotel.de.html';
+
+    expect(adapterFor(german)!.adapter.extractListing(bookingDoc, german)?.listingId).toBe('pt/some-hotel');
   });
 });
 
@@ -204,7 +237,7 @@ describe('airbnb adapter', () => {
   });
 
   it('falls back to the share title for the location', () => {
-    const noAddress = page('<meta property="og:title" content="Rental unit in Sintra · ★4.8 · 2 bedrooms"><title>Villa - Airbnb</title>');
+    const noAddress = page('<meta property="og:url" content="https://www.airbnb.com/rooms/12345"><meta property="og:title" content="Rental unit in Sintra · ★4.8 · 2 bedrooms"><title>Villa - Airbnb</title>');
     expect(adapter.extractListing(noAddress, airbnbUrl)).toMatchObject({ locationText: 'Sintra', title: 'Villa' });
   });
 
@@ -251,13 +284,14 @@ describe('every adapter', () => {
   });
 
   it('survives broken JSON-LD', () => {
-    const broken = page('<title>Flat - Airbnb</title><script type="application/ld+json">{not json</script><meta property="og:title" content="Home in Porto · ★5">');
+    const broken = page('<title>Flat - Airbnb</title><meta property="og:url" content="https://www.airbnb.com/rooms/12345"><script type="application/ld+json">{not json</script><meta property="og:title" content="Home in Porto · ★5">');
     expect(adapterFor(airbnbUrl)!.adapter.extractListing(broken, airbnbUrl)).toMatchObject({ title: 'Flat', locationText: 'Porto' });
   });
 
   it('keeps only https photos', () => {
     const mixed = page(
       `<title>Flat - Airbnb</title><meta property="og:title" content="Home in Porto · ★5">
+       <meta property="og:url" content="https://www.airbnb.com/rooms/12345">
        <meta property="og:image" content="http://a0.muscache.com/insecure.jpg">
        <script type="application/ld+json">${JSON.stringify({ '@type': 'VacationRental', image: ['javascript:alert(1)', 'https://a0.muscache.com/ok.jpg'] })}</script>`,
     );

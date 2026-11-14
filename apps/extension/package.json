@@ -8,7 +8,8 @@
     "build": "wxt build",
     "prepare-types": "wxt prepare",
     "test": "vitest run",
-    "typecheck": "wxt prepare && tsc --noEmit"
+    "typecheck": "wxt prepare && tsc --noEmit",
+    "postinstall": "wxt prepare"
   },
   "dependencies": {
     "@fontsource/bricolage-grotesque": "^5.3.0",
