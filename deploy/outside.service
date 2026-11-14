@@ -1,0 +1,52 @@
+# The Outside server as a system service.
+#
+# deploy/root-setup.sh fills in the four @…@ values and installs it:
+#
+# @USER@  the account that owns the checkout
+# @DIR@   the checkout, e.g. /home/emils/outside
+# @NODE@  the node binary that account uses
+# @PORT@  the port it listens on, on this machine only
+
+[Unit]
+Description=Outside: server, landing page and extension download
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=@USER@
+WorkingDirectory=@DIR@/apps/server
+# Behind nginx on the same machine: listen locally, and trust that one proxy for the visitor's address.
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=TRUST_PROXY=1
+Environment=PORT=@PORT@
+# The three API keys come from the .env in the checkout (readable by that account only). What is
+# set above wins over the same names in that file.
+ExecStart=@NODE@ --env-file-if-exists=@DIR@/.env --import tsx src/index.ts
+Restart=on-failure
+RestartSec=3
+
+# It needs to read its own files and write its cache and media; nothing else.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=@DIR@/apps/server/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+PrivateDevices=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+# The network, and nothing more exotic.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+# What it writes (cache, voice tracks, photos) is for this account only.
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -100,7 +100,15 @@ Content-Security-Policy that would silently drop those.
 
 ### Hosting it
 
-The same server runs on a host with a reverse proxy (Caddy, nginx) in front for HTTPS:
+`deploy/setup.sh` puts it on a server from start to finish and can be run again to ship a new version.
+You run it yourself: it asks for the server's login password once, to let your SSH key in, and for sudo's
+once. It sends `.env` (only when the server has none), builds the zip, syncs the code, installs the
+server's packages (and Node 22 with nvm, if you agree), then as root installs a systemd service, an nginx
+site for the domain and a certificate with certbot. It touches no firewall rule, no SSH setting and no
+other site; if nginx will not accept the new site, the site is taken out again. `deploy/setup.sh --help`
+lists the settings (host, folder, domain, key).
+
+By hand, the same server runs behind any reverse proxy (Caddy, nginx) that does HTTPS:
 
 ```bash
 pnpm install && pnpm bundle
