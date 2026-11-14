@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const extension = join(here, '..', 'apps', 'extension', '.output', 'chrome-mv3');
+const extension = join(here, '..', 'apps', 'extension', 'dist', 'chrome-mv3');
 const out = join(here, 'out');
 mkdirSync(out, { recursive: true });
 

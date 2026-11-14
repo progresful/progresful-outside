@@ -32,14 +32,14 @@ each one comes from. The server refuses to start and names any key that is missi
 
 ```bash
 pnpm dev:server          # http://127.0.0.1:8787, local only; restarts on code changes
-pnpm build:extension     # writes apps/extension/.output/chrome-mv3
+pnpm build:extension     # writes apps/extension/dist/chrome-mv3
 ```
 
 Load the extension in Chrome:
 
 1. Open `chrome://extensions`.
 2. Switch on **Developer mode** (top right).
-3. **Load unpacked** → choose `apps/extension/.output/chrome-mv3`.
+3. **Load unpacked** → choose `apps/extension/dist/chrome-mv3`.
 4. Pin "Outside" from the puzzle-piece menu so its popup is one click away.
 
 After a rebuild, press the reload arrow on the extension's card, then reload the listing tab.

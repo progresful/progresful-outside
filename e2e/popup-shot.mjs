@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const extension = join(here, '..', 'apps', 'extension', '.output', 'chrome-mv3');
+const extension = join(here, '..', 'apps', 'extension', 'dist', 'chrome-mv3');
 mkdirSync(join(here, 'out'), { recursive: true });
 
 const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'outside-e2e-')), {
